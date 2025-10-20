@@ -1,7 +1,9 @@
 name: checkpoint
-description: A sample command-line application.
+description: Sistema para gestão de dados de checkpoint em processos multi-etapas com persistência segura e atualizações granulares.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/rudsonalves/checkpoint
+homepage: https://github.com/rudsonalves/checkpoint
+documentation: https://github.com/rudsonalves/checkpoint#readme
 
 environment:
   sdk: ^3.9.2
