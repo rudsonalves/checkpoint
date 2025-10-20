@@ -107,17 +107,25 @@ await repository.updateSection(
 ### 3. Atualizações Granulares
 
 ```dart
-// Atualizar apenas email e telefone
-await repository.updatePersonalContactInfo(
+// Obter dados atuais e aplicar alterações usando extensions
+final currentData = repository.currentCheckpointData;
+
+// Atualizar apenas email e telefone usando copyWith
+final updatedData = currentData.updatePersonalContactInfo(
   email: 'novo@email.com',
   phone: '11888888888',
 );
 
+// Salvar as alterações
+await repository.saveCheckpointData(updatedData);
+
 // Atualizar campos específicos
-await repository.updatePersonalAccountFields(
+final dataWithUpdates = currentData.updatePersonalAccount(
   name: 'João Santos Silva',
   rgNumber: '123456789',
 );
+
+await repository.saveCheckpointData(dataWithUpdates);
 ```
 
 ### 4. Acessando Dados
@@ -354,13 +362,16 @@ Future<void> atualizacoesDinamicas() async {
   // Carregar dados existentes
   await repository.loadCheckpointData();
   
-  // Atualizar apenas email pessoal
-  await repository.updatePersonalContactInfo(
+  // Obter dados atuais
+  var currentData = repository.currentCheckpointData;
+  
+  // Atualizar apenas email pessoal usando extension
+  currentData = currentData.updatePersonalContactInfo(
     email: 'novo.email@exemplo.com',
   );
   
-  // Atualizar endereço empresarial
-  await repository.updateBusinessAddress(
+  // Atualizar endereço empresarial usando extension
+  currentData = currentData.updateBusinessAddress(
     zipCode: '04567890',
     city: 'Rio de Janeiro',
     state: 'RJ',
@@ -368,11 +379,14 @@ Future<void> atualizacoesDinamicas() async {
     streetAddress: 'Av. Atlântica, 1000',
   );
   
-  // Verificar dados atuais
-  final currentData = repository.currentCheckpointData;
+  // Salvar todas as alterações
+  await repository.saveCheckpointData(updatedData);
   
-  if (currentData.personalAccountValues != null) {
-    print('Email atual: ${currentData.personalAccountValues!.email}');
+  // Verificar dados atuais
+  final verifyData = repository.currentCheckpointData;
+  
+  if (verifyData.personalAccountValues != null) {
+    print('Email atual: ${verifyData.personalAccountValues!.email}');
   }
   
   // Combinar múltiplas atualizações
