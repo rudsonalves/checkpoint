@@ -1,33 +1,35 @@
+import 'package:equatable/equatable.dart';
 import 'base_checkpoint_values.dart';
 
-class BusinessPartnersValues extends BaseCheckpointValues {
-  final String companyId;
-  final String fullName;
-  final String email;
-  final bool isPoliticallyExposed;
-  final String zipCode;
-  final String state;
-  final String city;
-  final String district;
-  final String street;
-  final String number;
+/// Dados de um sócio empresarial individual.
+class BusinessPartnerData extends Equatable {
+  final String? companyId;
+  final String? fullName;
+  final String? email;
+  final bool? isPoliticallyExposed;
+  final String? zipCode;
+  final String? state;
+  final String? city;
+  final String? district;
+  final String? street;
+  final String? number;
   final String? complement;
 
-  const BusinessPartnersValues({
-    required this.companyId,
-    required this.fullName,
-    required this.email,
-    required this.isPoliticallyExposed,
-    required this.zipCode,
-    required this.state,
-    required this.city,
-    required this.district,
-    required this.street,
-    required this.number,
+  const BusinessPartnerData({
+    this.companyId,
+    this.fullName,
+    this.email,
+    this.isPoliticallyExposed,
+    this.zipCode,
+    this.state,
+    this.city,
+    this.district,
+    this.street,
+    this.number,
     this.complement,
   });
 
-  BusinessPartnersValues copyWith({
+  BusinessPartnerData copyWith({
     String? companyId,
     String? fullName,
     String? email,
@@ -40,7 +42,7 @@ class BusinessPartnersValues extends BaseCheckpointValues {
     String? number,
     String? complement,
   }) {
-    return BusinessPartnersValues(
+    return BusinessPartnerData(
       companyId: companyId ?? this.companyId,
       fullName: fullName ?? this.fullName,
       email: email ?? this.email,
@@ -55,8 +57,8 @@ class BusinessPartnersValues extends BaseCheckpointValues {
     );
   }
 
-  factory BusinessPartnersValues.fromMap(Map<String, dynamic> map) {
-    return BusinessPartnersValues(
+  factory BusinessPartnerData.fromMap(Map<String, dynamic> map) {
+    return BusinessPartnerData(
       companyId: map['company_id'] ?? '',
       fullName: map['full_name'] ?? '',
       email: map['email'] ?? '',
@@ -71,7 +73,6 @@ class BusinessPartnersValues extends BaseCheckpointValues {
     );
   }
 
-  @override
   Map<String, dynamic> toMap() {
     return {
       'company_id': companyId,
@@ -102,4 +103,89 @@ class BusinessPartnersValues extends BaseCheckpointValues {
     number,
     complement,
   ];
+}
+
+/// Coleção que gerencia múltiplos sócios empresariais.
+///
+/// Esta classe representa todos os sócios empresariais cadastrados no processo
+/// de abertura de conta, permitindo operações como adicionar, remover e
+/// atualizar sócios individuais.
+class BusinessPartnersValues extends BaseCheckpointValues {
+  /// Lista de todos os sócios empresariais cadastrados.
+  final List<BusinessPartnerData> partners;
+
+  const BusinessPartnersValues({
+    this.partners = const [],
+  });
+
+  /// Adiciona um novo sócio à coleção.
+  ///
+  /// [partner] - Dados do novo sócio a ser adicionado
+  ///
+  /// Retorna uma nova instância com o sócio adicionado.
+  BusinessPartnersValues addPartner(BusinessPartnerData partner) {
+    return copyWith(partners: [...partners, partner]);
+  }
+
+  /// Remove um sócio da coleção pelo índice.
+  ///
+  /// [index] - Índice do sócio a ser removido
+  ///
+  /// Retorna uma nova instância sem o sócio removido.
+  /// Se o índice for inválido, retorna a instância atual inalterada.
+  BusinessPartnersValues removePartner(int index) {
+    if (index < 0 || index >= partners.length) return this;
+    final updatedPartners = List<BusinessPartnerData>.from(partners);
+    updatedPartners.removeAt(index);
+    return copyWith(partners: updatedPartners);
+  }
+
+  /// Atualiza um sócio específico na coleção.
+  ///
+  /// [index] - Índice do sócio a ser atualizado
+  /// [partner] - Novos dados do sócio
+  ///
+  /// Retorna uma nova instância com o sócio atualizado.
+  /// Se o índice for inválido, retorna a instância atual inalterada.
+  BusinessPartnersValues updatePartner(int index, BusinessPartnerData partner) {
+    if (index < 0 || index >= partners.length) return this;
+    final updatedPartners = List<BusinessPartnerData>.from(partners);
+    updatedPartners[index] = partner;
+    return copyWith(partners: updatedPartners);
+  }
+
+  /// Cria uma cópia da instância com os valores especificados alterados.
+  ///
+  /// Implementa o padrão copy-with para imutabilidade.
+  BusinessPartnersValues copyWith({
+    List<BusinessPartnerData>? partners,
+  }) {
+    return BusinessPartnersValues(
+      partners: partners ?? this.partners,
+    );
+  }
+
+  /// Factory constructor que cria uma instância a partir de um mapa.
+  ///
+  /// [map] - Mapa contendo os dados serializados da coleção de sócios
+  factory BusinessPartnersValues.fromMap(Map<String, dynamic> map) {
+    final partnersData = map['partners'] as List<dynamic>? ?? [];
+    final partners = partnersData
+        .map(
+          (data) => BusinessPartnerData.fromMap(data as Map<String, dynamic>),
+        )
+        .toList();
+
+    return BusinessPartnersValues(partners: partners);
+  }
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {
+      'partners': partners.map((partner) => partner.toMap()).toList(),
+    };
+  }
+
+  @override
+  List<Object?> get props => [partners];
 }

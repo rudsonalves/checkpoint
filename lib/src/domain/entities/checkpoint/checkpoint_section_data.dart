@@ -56,18 +56,9 @@ sealed class CheckpointSectionData extends Equatable {
     }
   }
 
-  /// Converte os dados da seção para um mapa de dados.
-  ///
-  /// Deve ser implementado por todas as subclasses para permitir
-  /// serialização dos dados específicos da seção.
   Map<String, dynamic> toMap();
 }
 
-/// Implementação de [CheckpointSectionData] para seções vazias.
-///
-/// Utilizada quando não há dados específicos para uma seção,
-/// como nos estágios [CheckpointStage.noExistAccount] e
-/// [CheckpointStage.unknown].
 class EmptySection extends CheckpointSectionData {
   const EmptySection();
 

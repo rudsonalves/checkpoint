@@ -18,14 +18,8 @@ import '../../enum/checkpoint_enum.dart';
 ///
 /// A classe é imutável e utiliza o padrão copy-with para atualizações.
 class CheckpointData extends Equatable {
-  /// O estágio atual do processo de checkpoint.
   final CheckpointStage currentStage;
-
-  /// Indica se todo o processo de checkpoint foi completado.
   final bool isCompleted;
-
-  /// Mapa contendo os dados de cada seção já preenchida do checkpoint.
-  /// A chave é o estágio e o valor são os dados correspondentes.
   final Map<CheckpointStage, CheckpointSectionData> sections;
 
   const CheckpointData({
@@ -34,10 +28,6 @@ class CheckpointData extends Equatable {
     this.sections = const {},
   });
 
-  /// Factory constructor que cria uma instância vazia de [CheckpointData].
-  ///
-  /// Útil para inicializar um novo processo de checkpoint.
-  /// Inicia no estágio [CheckpointStage.noExistAccount] e não completado.
   factory CheckpointData.empty() => const CheckpointData(
     currentStage: CheckpointStage.noExistAccount,
     isCompleted: false,
@@ -59,13 +49,6 @@ class CheckpointData extends Equatable {
     };
   }
 
-  /// Factory constructor que cria uma instância de [CheckpointData] a partir de
-  /// um mapa.
-  ///
-  /// [map] - Mapa contendo os dados serializados do checkpoint
-  ///
-  /// Reconstitui todas as seções baseado nos dados salvos e determina
-  /// o tipo correto de cada seção baseado no estágio.
   factory CheckpointData.fromMap(Map<String, dynamic> map) {
     final sectionsMap = <CheckpointStage, CheckpointSectionData>{};
     final sectionsData = map['sections'] as Map<String, dynamic>? ?? {};
@@ -88,17 +71,8 @@ class CheckpointData extends Equatable {
     );
   }
 
-  /// Converte os dados do checkpoint para uma string JSON.
-  ///
-  /// Útil para persistência ou transmissão dos dados.
   String toJson() => json.encode(toMap());
 
-  /// Factory constructor que cria uma instância de [CheckpointData] a partir de
-  /// uma string JSON.
-  ///
-  /// [source] - String JSON contendo os dados serializados
-  ///
-  /// Se a string estiver vazia, retorna uma instância vazia.
   factory CheckpointData.fromJson(String source) {
     if (source.isEmpty) return CheckpointData.empty();
     return CheckpointData.fromMap(json.decode(source));
@@ -228,15 +202,23 @@ extension CheckpointDataExtensions on CheckpointData {
 
   /// Obtém todos os sócios empresariais cadastrados.
   ///
-  /// Atualmente suporta apenas um sócio, mas a estrutura permite
-  /// expansão futura para múltiplos sócios.
-  ///
-  /// Retorna uma lista vazia se nenhum sócio foi cadastrado.
-  List<BusinessPartnersValues> get businessPartnersValues {
+  /// Retorna uma lista com todos os sócios cadastrados no processo.
+  /// Se nenhum sócio foi cadastrado, retorna uma lista vazia.
+  List<BusinessPartnerData> get businessPartnersValues {
     final section = getSectionData<CheckpointSection<BusinessPartnersValues>>(
       CheckpointStage.registerBusinessPartners,
     );
-    return section != null ? [section.values] : [];
+    return section?.values.partners ?? [];
+  }
+
+  /// Obtém a coleção completa de sócios empresariais.
+  ///
+  /// Retorna null se a seção de sócios ainda não foi inicializada.
+  BusinessPartnersValues? get businessPartnersCollection {
+    final section = getSectionData<CheckpointSection<BusinessPartnersValues>>(
+      CheckpointStage.registerBusinessPartners,
+    );
+    return section?.values;
   }
 }
 
@@ -340,12 +322,71 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     );
   }
 
-  /// Atualiza campos específicos dos dados de sócios empresariais.
+  /// Adiciona um novo sócio empresarial.
   ///
+  /// [partner] - Dados do novo sócio a ser adicionado
+  ///
+  /// Retorna uma nova instância com o sócio adicionado.
+  CheckpointData addBusinessPartner(BusinessPartnerData partner) {
+    final currentCollection =
+        businessPartnersCollection ?? const BusinessPartnersValues();
+
+    final updatedCollection = currentCollection.addPartner(partner);
+
+    return withSection(
+      stage: CheckpointStage.registerBusinessPartners,
+      sectionData: CheckpointSection(values: updatedCollection),
+      nextStage: currentStage, // Mantém no mesmo estágio para adicionar mais
+    );
+  }
+
+  /// Remove um sócio empresarial pelo índice.
+  ///
+  /// [index] - Índice do sócio a ser removido
+  ///
+  /// Retorna uma nova instância sem o sócio removido.
+  /// Se o índice for inválido ou não existir coleção, retorna a instância atual.
+  CheckpointData removeBusinessPartner(int index) {
+    final currentCollection = businessPartnersCollection;
+    if (currentCollection == null) return this;
+
+    final updatedCollection = currentCollection.removePartner(index);
+
+    return withSection(
+      stage: CheckpointStage.registerBusinessPartners,
+      sectionData: CheckpointSection(values: updatedCollection),
+      nextStage: currentStage,
+    );
+  }
+
+  /// Atualiza um sócio específico.
+  ///
+  /// [index] - Índice do sócio a ser atualizado
+  /// [partner] - Novos dados do sócio
+  ///
+  /// Retorna uma nova instância com o sócio atualizado.
+  /// Se o índice for inválido ou não existir coleção, retorna a instância atual.
+  CheckpointData updateBusinessPartner(int index, BusinessPartnerData partner) {
+    final currentCollection = businessPartnersCollection;
+    if (currentCollection == null) return this;
+
+    final updatedCollection = currentCollection.updatePartner(index, partner);
+
+    return withSection(
+      stage: CheckpointStage.registerBusinessPartners,
+      sectionData: CheckpointSection(values: updatedCollection),
+      nextStage: currentStage,
+    );
+  }
+
+  /// Atualiza campos específicos de um sócio empresarial.
+  ///
+  /// [index] - Índice do sócio a ser atualizado
   /// Apenas os campos fornecidos serão atualizados, os demais permanecerão
   /// inalterados.
-  /// Se não existir dados de sócios, não faz nada e retorna a instância atual.
-  CheckpointData updateBusinessPartner({
+  /// Se não existir coleção ou o índice for inválido, retorna a instância atual.
+  CheckpointData updateBusinessPartnerFields(
+    int index, {
     String? companyId,
     String? fullName,
     String? email,
@@ -358,12 +399,10 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     String? number,
     String? complement,
   }) {
-    final currentValues = businessPartnersValues.isNotEmpty
-        ? businessPartnersValues.first
-        : null;
-    if (currentValues == null) return this;
+    final partners = businessPartnersValues;
+    if (index < 0 || index >= partners.length) return this;
 
-    final updatedValues = currentValues.copyWith(
+    final updatedPartner = partners[index].copyWith(
       companyId: companyId,
       fullName: fullName,
       email: email,
@@ -377,10 +416,6 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
       complement: complement,
     );
 
-    return withSection(
-      stage: CheckpointStage.registerBusinessPartners,
-      sectionData: CheckpointSection(values: updatedValues),
-      nextStage: currentStage, // Mantém o estágio atual
-    );
+    return updateBusinessPartner(index, updatedPartner);
   }
 }
