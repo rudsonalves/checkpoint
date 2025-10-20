@@ -10,9 +10,8 @@ import '../../enum/checkpoint_enum.dart';
 ///
 /// Esta classe define a interface comum para todas as seções do checkpoint,
 /// permitindo diferentes tipos de dados serem tratados de forma uniforme.
-/// Utiliza o padrão sealed class para garantir que todas as implementações
-/// sejam conhecidas em tempo de compilação.
-sealed class CheckpointSectionData extends Equatable {
+/// O tipo específico de seção é determinado pelo CheckpointStage correspondente.
+abstract class CheckpointSectionData extends Equatable {
   const CheckpointSectionData();
 
   /// Factory constructor que cria uma instância de [CheckpointSectionData]

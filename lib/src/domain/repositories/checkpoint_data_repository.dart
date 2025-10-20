@@ -32,9 +32,6 @@ abstract interface class CheckpointDataRepository {
   /// Sincroniza com a API (implementação futura)
   AsyncResult<Unit> syncWithApi();
 
-  /// Obtém dados de uma seção específica
-  T? getSectionData<T extends CheckpointSectionData>(CheckpointStage stage);
-
   /// Verifica se uma seção foi preenchida
   bool hasSectionData(CheckpointStage stage);
 }

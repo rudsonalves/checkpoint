@@ -124,18 +124,6 @@ class CheckpointData extends Equatable {
         CheckpointStage.unknown => CheckpointStage.noExistAccount,
       };
 
-  /// Obtém os dados de uma seção específica com type safety.
-  ///
-  /// [T] - Tipo específico da seção desejada
-  /// [stage] - O estágio da seção a ser recuperada
-  ///
-  /// Retorna os dados da seção se existir e for do tipo correto, caso contrário
-  /// null.
-  T? getSectionData<T extends CheckpointSectionData>(CheckpointStage stage) {
-    final section = sections[stage];
-    return section is T ? section : null;
-  }
-
   /// Verifica se existe dados para um estágio específico.
   ///
   /// [stage] - O estágio a ser verificado
@@ -183,43 +171,40 @@ extension CheckpointDataExtensions on CheckpointData {
   /// Obtém os dados da conta pessoal se disponíveis.
   ///
   /// Retorna null se os dados pessoais ainda não foram preenchidos.
-  PersonalAccountValues? get personalAccountValues {
-    final section = getSectionData<CheckpointSection<PersonalAccountValues>>(
-      CheckpointStage.createPersonalAccount,
-    );
-    return section?.values;
-  }
+  PersonalAccountValues? get personalAccountValues =>
+      switch (sections[CheckpointStage.createPersonalAccount]) {
+        CheckpointSection<PersonalAccountValues> section => section.values,
+        _ => null,
+      };
 
   /// Obtém os dados da conta empresarial se disponíveis.
   ///
   /// Retorna null se os dados empresariais ainda não foram preenchidos.
-  BusinessAccountValues? get businessAccountValues {
-    final section = getSectionData<CheckpointSection<BusinessAccountValues>>(
-      CheckpointStage.createBusinessAccount,
-    );
-    return section?.values;
-  }
+  BusinessAccountValues? get businessAccountValues =>
+      switch (sections[CheckpointStage.createBusinessAccount]) {
+        CheckpointSection<BusinessAccountValues> section => section.values,
+        _ => null,
+      };
 
   /// Obtém todos os sócios empresariais cadastrados.
   ///
   /// Retorna uma lista com todos os sócios cadastrados no processo.
   /// Se nenhum sócio foi cadastrado, retorna uma lista vazia.
-  List<BusinessPartnerData> get businessPartnersValues {
-    final section = getSectionData<CheckpointSection<BusinessPartnersValues>>(
-      CheckpointStage.registerBusinessPartners,
-    );
-    return section?.values.partners ?? [];
-  }
+  List<BusinessPartnerData> get businessPartnersValues =>
+      switch (sections[CheckpointStage.registerBusinessPartners]) {
+        CheckpointSection<BusinessPartnersValues> section =>
+          section.values.partners,
+        _ => <BusinessPartnerData>[],
+      };
 
   /// Obtém a coleção completa de sócios empresariais.
   ///
   /// Retorna null se a seção de sócios ainda não foi inicializada.
-  BusinessPartnersValues? get businessPartnersCollection {
-    final section = getSectionData<CheckpointSection<BusinessPartnersValues>>(
-      CheckpointStage.registerBusinessPartners,
-    );
-    return section?.values;
-  }
+  BusinessPartnersValues? get businessPartnersCollection =>
+      switch (sections[CheckpointStage.registerBusinessPartners]) {
+        CheckpointSection<BusinessPartnersValues> section => section.values,
+        _ => null,
+      };
 }
 
 /// Extension que adiciona métodos para atualizar campos específicos das seções

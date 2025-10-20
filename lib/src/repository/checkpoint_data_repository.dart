@@ -132,11 +132,6 @@ class CheckpointDataRepositoryImpl implements CheckpointDataRepository {
   }
 
   @override
-  T? getSectionData<T extends CheckpointSectionData>(CheckpointStage stage) {
-    return _currentCheckpointData.getSectionData<T>(stage);
-  }
-
-  @override
   bool hasSectionData(CheckpointStage stage) {
     return _currentCheckpointData.hasSectionData(stage);
   }
