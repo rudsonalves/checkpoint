@@ -1,12 +1,18 @@
 import 'dart:convert';
 
+import '/domain/enums/checkpoint_enum.dart';
 import 'package:equatable/equatable.dart';
 
 import 'checkpoint_section_data.dart';
 import 'checkpoint_values/business_account_values.dart';
 import 'checkpoint_values/business_partners_values.dart';
 import 'checkpoint_values/personal_account_values.dart';
-import '../../enum/checkpoint_enum.dart';
+
+export '/domain/enums/checkpoint_enum.dart';
+export 'checkpoint_section_data.dart';
+export 'checkpoint_values/business_account_values.dart';
+export 'checkpoint_values/business_partners_values.dart';
+export 'checkpoint_values/personal_account_values.dart';
 
 /// Classe principal que representa todos os dados do checkpoint de abertura de
 /// conta.
@@ -90,7 +96,7 @@ class CheckpointData extends Equatable {
   CheckpointData withSection({
     required CheckpointStage stage,
     required CheckpointSectionData sectionData,
-    CheckpointStage? nextStage,
+    // CheckpointStage? nextStage,
   }) {
     final updatedSections = Map<CheckpointStage, CheckpointSectionData>.from(
       sections,
@@ -99,7 +105,7 @@ class CheckpointData extends Equatable {
 
     return copyWith(
       sections: updatedSections,
-      currentStage: nextStage ?? _getNextStage(stage),
+      currentStage: stage, // nextStage ?? _getNextStage(stage),
     );
   }
 
@@ -111,18 +117,18 @@ class CheckpointData extends Equatable {
   /// 3. createBusinessAccount → registerBusinessPartners
   /// 4. registerBusinessPartners → registerBusinessPartners (permite múltiplos
   /// sócios)
-  CheckpointStage _getNextStage(CheckpointStage currentStage) =>
-      switch (currentStage) {
-        CheckpointStage.noExistAccount => CheckpointStage.createPersonalAccount,
-        CheckpointStage.createPersonalAccount =>
-          CheckpointStage.createBusinessAccount,
-        CheckpointStage.createBusinessAccount =>
-          CheckpointStage.registerBusinessPartners,
-        CheckpointStage.registerBusinessPartners =>
-          // Pode ter múltiplos sócios
-          CheckpointStage.registerBusinessPartners,
-        CheckpointStage.unknown => CheckpointStage.noExistAccount,
-      };
+  // CheckpointStage _getNextStage(CheckpointStage currentStage) =>
+  //     switch (currentStage) {
+  //       CheckpointStage.noExistAccount => CheckpointStage.createPersonalAccount,
+  //       CheckpointStage.createPersonalAccount =>
+  //         CheckpointStage.createBusinessAccount,
+  //       CheckpointStage.createBusinessAccount =>
+  //         CheckpointStage.registerBusinessPartners,
+  //       CheckpointStage.registerBusinessPartners =>
+  //         // Pode ter múltiplos sócios
+  //         CheckpointStage.registerBusinessPartners,
+  //       CheckpointStage.unknown => CheckpointStage.noExistAccount,
+  //     };
 
   /// Verifica se existe dados para um estágio específico.
   ///
@@ -225,6 +231,7 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     String? email,
     String? phone,
     String? password,
+    String? passwordConfirmation,
     String? rgNumber,
     String? rgIssuer,
     String? rgIssuerStateId,
@@ -240,6 +247,7 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
       email: email,
       phone: phone,
       password: password,
+      passwordConfirmation: passwordConfirmation,
       rgNumber: rgNumber,
       rgIssuer: rgIssuer,
       rgIssuerStateId: rgIssuerStateId,
@@ -250,7 +258,7 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     return withSection(
       stage: CheckpointStage.createPersonalAccount,
       sectionData: CheckpointSection(values: updatedValues),
-      nextStage: currentStage, // Mantém o estágio atual
+      // nextStage: currentStage, // Mantém o estágio atual
     );
   }
 
@@ -303,7 +311,7 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     return withSection(
       stage: CheckpointStage.createBusinessAccount,
       sectionData: CheckpointSection(values: updatedValues),
-      nextStage: currentStage, // Mantém o estágio atual
+      // nextStage: currentStage, // Mantém o estágio atual
     );
   }
 
@@ -321,7 +329,7 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     return withSection(
       stage: CheckpointStage.registerBusinessPartners,
       sectionData: CheckpointSection(values: updatedCollection),
-      nextStage: currentStage, // Mantém no mesmo estágio para adicionar mais
+      // nextStage: currentStage, // Mantém no mesmo estágio para adicionar mais
     );
   }
 
@@ -340,7 +348,7 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     return withSection(
       stage: CheckpointStage.registerBusinessPartners,
       sectionData: CheckpointSection(values: updatedCollection),
-      nextStage: currentStage,
+      // nextStage: currentStage,
     );
   }
 
@@ -360,7 +368,7 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     return withSection(
       stage: CheckpointStage.registerBusinessPartners,
       sectionData: CheckpointSection(values: updatedCollection),
-      nextStage: currentStage,
+      // nextStage: currentStage,
     );
   }
 

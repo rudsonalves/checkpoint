@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+
 import 'base_checkpoint_values.dart';
 
 /// Dados de um sócio empresarial individual.
@@ -28,6 +29,22 @@ class BusinessPartnerData extends Equatable {
     this.number,
     this.complement,
   });
+
+  factory BusinessPartnerData.empty() {
+    return const BusinessPartnerData(
+      companyId: '',
+      fullName: '',
+      email: '',
+      isPoliticallyExposed: false,
+      zipCode: '',
+      state: '',
+      city: '',
+      district: '',
+      street: '',
+      number: '',
+      complement: null,
+    );
+  }
 
   BusinessPartnerData copyWith({
     String? companyId,
@@ -118,6 +135,9 @@ class BusinessPartnersValues extends BaseCheckpointValues {
     this.partners = const [],
   });
 
+  @override
+  CheckpointStage get stage => CheckpointStage.registerBusinessPartners;
+
   /// Adiciona um novo sócio à coleção.
   ///
   /// [partner] - Dados do novo sócio a ser adicionado
@@ -163,6 +183,10 @@ class BusinessPartnersValues extends BaseCheckpointValues {
     return BusinessPartnersValues(
       partners: partners ?? this.partners,
     );
+  }
+
+  factory BusinessPartnersValues.empty() {
+    return BusinessPartnersValues(partners: [BusinessPartnerData.empty()]);
   }
 
   /// Factory constructor que cria uma instância a partir de um mapa.

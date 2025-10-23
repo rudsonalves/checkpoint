@@ -1,6 +1,5 @@
-import 'package:checkpoint/src/domain/entities/checkpoint/checkpoint_data.dart';
-import 'package:checkpoint/src/domain/entities/checkpoint/checkpoint_section_data.dart';
-import 'package:checkpoint/src/domain/enum/checkpoint_enum.dart';
+import 'package:checkpoint/domain/entities/checkpoint/checkpoint_data.dart';
+import 'package:checkpoint/domain/enums/checkpoint_enum.dart';
 import 'package:result_dart/result_dart.dart';
 
 abstract interface class CheckpointDataRepository {
@@ -17,7 +16,6 @@ abstract interface class CheckpointDataRepository {
   AsyncResult<CheckpointData> updateSection({
     required CheckpointStage stage,
     required CheckpointSectionData sectionData,
-    CheckpointStage? nextStage,
   });
 
   /// Avança para o próximo estágio

@@ -1,5 +1,5 @@
-import '../lib/src/domain/entities/checkpoint/checkpoint_data.dart';
-import '../lib/src/domain/entities/checkpoint/checkpoint_values/business_partners_values.dart';
+import '../lib/domain/entities/checkpoint/checkpoint_data.dart';
+import '../lib/domain/entities/checkpoint/checkpoint_values/business_partners_values.dart';
 
 /// Exemplo demonstrando o uso de múltiplos sócios empresariais.
 void main() {

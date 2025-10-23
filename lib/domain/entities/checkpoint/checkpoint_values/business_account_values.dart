@@ -37,6 +37,30 @@ class BusinessAccountValues extends BaseCheckpointValues {
     required this.openingDate,
   });
 
+  @override
+  CheckpointStage get stage => CheckpointStage.createBusinessAccount;
+
+  factory BusinessAccountValues.empty() {
+    return BusinessAccountValues(
+      cnpj: '',
+      municipalRegistration: '',
+      legalName: '',
+      tradeName: '',
+      phone: '',
+      revenueOptionId: '',
+      zipCode: '',
+      state: '',
+      city: '',
+      neighborhood: '',
+      streetAddress: '',
+      number: '',
+      complement: '',
+      addressStartDate: DateTime.now(),
+      email: '',
+      openingDate: '',
+    );
+  }
+
   BusinessAccountValues copyWith({
     String? cnpj,
     String? municipalRegistration,

@@ -1,10 +1,6 @@
 import 'package:equatable/equatable.dart';
 
 import 'checkpoint_values/base_checkpoint_values.dart';
-import 'checkpoint_values/business_account_values.dart';
-import 'checkpoint_values/business_partners_values.dart';
-import 'checkpoint_values/personal_account_values.dart';
-import '../../enum/checkpoint_enum.dart';
 
 /// Classe base abstrata que representa os dados de uma seção do checkpoint.
 ///

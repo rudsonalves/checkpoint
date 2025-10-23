@@ -1,8 +1,8 @@
-import 'package:checkpoint/src/domain/entities/checkpoint/checkpoint_data.dart';
-import 'package:checkpoint/src/domain/entities/checkpoint/checkpoint_section_data.dart';
-import 'package:checkpoint/src/domain/enum/checkpoint_enum.dart';
-import 'package:checkpoint/src/domain/repositories/checkpoint_data_repository.dart';
-import 'package:checkpoint/src/core/services/secure_storage/local_secure_storage.dart';
+import 'package:checkpoint/domain/entities/checkpoint/checkpoint_data.dart';
+import 'package:checkpoint/domain/entities/checkpoint/checkpoint_section_data.dart';
+import 'package:checkpoint/domain/enums/checkpoint_enum.dart';
+import 'package:checkpoint/domain/repositories/checkpoint_data_repository.dart';
+import 'package:checkpoint/core/services/secure_storage/local_secure_storage.dart';
 import 'package:result_dart/result_dart.dart';
 
 class CheckpointDataRepositoryImpl implements CheckpointDataRepository {
@@ -58,13 +58,11 @@ class CheckpointDataRepositoryImpl implements CheckpointDataRepository {
   AsyncResult<CheckpointData> updateSection({
     required CheckpointStage stage,
     required CheckpointSectionData sectionData,
-    CheckpointStage? nextStage,
   }) async {
     try {
       final updatedCheckpoint = _currentCheckpointData.withSection(
         stage: stage,
         sectionData: sectionData,
-        nextStage: nextStage,
       );
 
       final saveResult = await saveCheckpointData(updatedCheckpoint);

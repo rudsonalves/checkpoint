@@ -6,6 +6,7 @@ class PersonalAccountValues extends BaseCheckpointValues {
   final String email;
   final String phone;
   final String password;
+  final String passwordConfirmation;
   final String rgNumber;
   final String rgIssuer;
   final String rgIssuerStateId;
@@ -18,6 +19,7 @@ class PersonalAccountValues extends BaseCheckpointValues {
     required this.email,
     required this.phone,
     required this.password,
+    required this.passwordConfirmation,
     required this.rgNumber,
     required this.rgIssuer,
     required this.rgIssuerStateId,
@@ -25,12 +27,32 @@ class PersonalAccountValues extends BaseCheckpointValues {
     required this.rgIssuerStateAbbreviation,
   });
 
+  @override
+  CheckpointStage get stage => CheckpointStage.createPersonalAccount;
+
+  factory PersonalAccountValues.empty() {
+    return PersonalAccountValues(
+      name: '',
+      cpf: '',
+      email: '',
+      phone: '',
+      password: '',
+      passwordConfirmation: '',
+      rgNumber: '',
+      rgIssuer: '',
+      rgIssuerStateId: '',
+      rgIssuerStateAbbreviation: '',
+      rgIssueDate: DateTime.now(),
+    );
+  }
+
   PersonalAccountValues copyWith({
     String? name,
     String? cpf,
     String? email,
     String? phone,
     String? password,
+    String? passwordConfirmation,
     String? rgNumber,
     String? rgIssuer,
     String? rgIssuerStateId,
@@ -43,6 +65,7 @@ class PersonalAccountValues extends BaseCheckpointValues {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       password: password ?? this.password,
+      passwordConfirmation: passwordConfirmation ?? this.passwordConfirmation,
       rgNumber: rgNumber ?? this.rgNumber,
       rgIssuer: rgIssuer ?? this.rgIssuer,
       rgIssuerStateId: rgIssuerStateId ?? this.rgIssuerStateId,
@@ -59,6 +82,7 @@ class PersonalAccountValues extends BaseCheckpointValues {
       email: map['email'] ?? '',
       phone: map['phone'] ?? '',
       password: map['password'] ?? '',
+      passwordConfirmation: map['password_confirmation'] ?? '',
       rgNumber: map['rg_number'] ?? '',
       rgIssuer: map['rg_issuer'] ?? '',
       rgIssuerStateId: map['rg_issuer_state_id'] ?? '',
@@ -75,6 +99,7 @@ class PersonalAccountValues extends BaseCheckpointValues {
       'email': email,
       'phone': phone,
       'password': password,
+      'password_confirmation': passwordConfirmation,
       'rg_number': rgNumber,
       'rg_issuer': rgIssuer,
       'rg_issuer_state_id': rgIssuerStateId,
@@ -90,6 +115,7 @@ class PersonalAccountValues extends BaseCheckpointValues {
     email,
     phone,
     password,
+    passwordConfirmation,
     rgNumber,
     rgIssuer,
     rgIssuerStateId,
