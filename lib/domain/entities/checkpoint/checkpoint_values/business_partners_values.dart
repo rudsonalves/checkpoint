@@ -1,81 +1,140 @@
-import 'package:equatable/equatable.dart';
-
 import 'base_checkpoint_values.dart';
 
 /// Dados de um sócio empresarial individual.
-class BusinessPartnerData extends Equatable {
-  final String? companyId;
-  final String? fullName;
-  final String? email;
-  final bool? isPoliticallyExposed;
-  final String? zipCode;
-  final String? state;
-  final String? city;
-  final String? district;
-  final String? street;
-  final String? number;
-  final String? complement;
+class BusinessPartnerData extends BaseCheckpointValues {
+  String _companyId;
+  String _fullName;
+  String _email;
+  bool _isPoliticallyExposed;
+  String _zipCode;
+  String _state;
+  String _city;
+  String _district;
+  String _street;
+  String _number;
+  String? _complement;
 
-  const BusinessPartnerData({
-    this.companyId,
-    this.fullName,
-    this.email,
-    this.isPoliticallyExposed,
-    this.zipCode,
-    this.state,
-    this.city,
-    this.district,
-    this.street,
-    this.number,
-    this.complement,
-  });
+  String get companyId => _companyId;
+  String get fullName => _fullName;
+  String get email => _email;
+  bool get isPoliticallyExposed => _isPoliticallyExposed;
+  String get zipCode => _zipCode;
+  String get state => _state;
+  String get city => _city;
+  String get district => _district;
+  String get street => _street;
+  String get number => _number;
+  String? get complement => _complement;
 
-  factory BusinessPartnerData.empty() {
-    return const BusinessPartnerData(
-      companyId: '',
-      fullName: '',
-      email: '',
-      isPoliticallyExposed: false,
-      zipCode: '',
-      state: '',
-      city: '',
-      district: '',
-      street: '',
-      number: '',
-      complement: null,
-    );
+  @override
+  CheckpointStage get stage => CheckpointStage.registerBusinessPartners;
+
+  set companyId(String value) {
+    if (_companyId != value) {
+      _companyId = value;
+      markDirty('company_id');
+    }
   }
 
-  BusinessPartnerData copyWith({
-    String? companyId,
-    String? fullName,
-    String? email,
-    bool? isPoliticallyExposed,
-    String? zipCode,
-    String? state,
-    String? city,
-    String? district,
-    String? street,
-    String? number,
+  set fullName(String value) {
+    if (_fullName != value) {
+      _fullName = value;
+      markDirty('full_name');
+    }
+  }
+
+  set email(String value) {
+    if (_email != value) {
+      _email = value;
+      markDirty('email');
+    }
+  }
+
+  set isPoliticallyExposed(bool value) {
+    if (_isPoliticallyExposed != value) {
+      _isPoliticallyExposed = value;
+      markDirty('is_politically_exposed');
+    }
+  }
+
+  set zipCode(String value) {
+    if (_zipCode != value) {
+      _zipCode = value;
+      markDirty('zip_code');
+    }
+  }
+
+  set state(String value) {
+    if (_state != value) {
+      _state = value;
+      markDirty('state');
+    }
+  }
+
+  set city(String value) {
+    if (_city != value) {
+      _city = value;
+      markDirty('city');
+    }
+  }
+
+  set district(String value) {
+    if (_district != value) {
+      _district = value;
+      markDirty('district');
+    }
+  }
+
+  set street(String value) {
+    if (_street != value) {
+      _street = value;
+      markDirty('street');
+    }
+  }
+
+  set number(String value) {
+    if (_number != value) {
+      _number = value;
+      markDirty('number');
+    }
+  }
+
+  set complement(String? value) {
+    if (_complement != value) {
+      _complement = value;
+      markDirty('complement');
+    }
+  }
+
+  BusinessPartnerData({
+    String companyId = '',
+    String fullName = '',
+    String email = '',
+    bool isPoliticallyExposed = false,
+    String zipCode = '',
+    String state = '',
+    String city = '',
+    String district = '',
+    String street = '',
+    String number = '',
     String? complement,
-  }) {
-    return BusinessPartnerData(
-      companyId: companyId ?? this.companyId,
-      fullName: fullName ?? this.fullName,
-      email: email ?? this.email,
-      isPoliticallyExposed: isPoliticallyExposed ?? this.isPoliticallyExposed,
-      zipCode: zipCode ?? this.zipCode,
-      state: state ?? this.state,
-      city: city ?? this.city,
-      district: district ?? this.district,
-      street: street ?? this.street,
-      number: number ?? this.number,
-      complement: complement ?? this.complement,
-    );
-  }
+  }) : _companyId = companyId,
+       _fullName = fullName,
+       _email = email,
+       _isPoliticallyExposed = isPoliticallyExposed,
+       _zipCode = zipCode,
+       _state = state,
+       _city = city,
+       _district = district,
+       _street = street,
+       _number = number,
+       _complement = complement;
 
+  factory BusinessPartnerData.empty() => BusinessPartnerData();
+
+  /// Reconstrói a lista de sócios e restaura os campos marcados como sujos.
   factory BusinessPartnerData.fromMap(Map<String, dynamic> map) {
-    return BusinessPartnerData(
+    final instance = BusinessPartnerData(
       companyId: map['company_id'] ?? '',
       fullName: map['full_name'] ?? '',
       email: map['email'] ?? '',
@@ -86,10 +145,18 @@ class BusinessPartnerData extends Equatable {
       district: map['district'] ?? '',
       street: map['street'] ?? '',
       number: map['number'] ?? '',
-      complement: map['complement'],
+      complement: map['complement'] ?? '',
     );
+
+    final dirty = map['dirty_fields'];
+    if (dirty is List) {
+      instance.dirtyFields.addAll(dirty.map((e) => e.toString()));
+    }
+
+    return instance;
   }
 
+  @override
   Map<String, dynamic> toMap() {
     return {
       'company_id': companyId,
@@ -103,23 +170,9 @@ class BusinessPartnerData extends Equatable {
       'street': street,
       'number': number,
       'complement': complement,
+      'dirty_fields': dirtyFields.toList(),
     };
   }
-
-  @override
-  List<Object?> get props => [
-    companyId,
-    fullName,
-    email,
-    isPoliticallyExposed,
-    zipCode,
-    state,
-    city,
-    district,
-    street,
-    number,
-    complement,
-  ];
 }
 
 /// Coleção que gerencia múltiplos sócios empresariais.
@@ -131,67 +184,61 @@ class BusinessPartnersValues extends BaseCheckpointValues {
   /// Lista de todos os sócios empresariais cadastrados.
   final List<BusinessPartnerData> partners;
 
-  const BusinessPartnersValues({
-    this.partners = const [],
-  });
+  BusinessPartnersValues({this.partners = const []});
 
   @override
   CheckpointStage get stage => CheckpointStage.registerBusinessPartners;
 
   /// Adiciona um novo sócio à coleção.
   ///
-  /// [partner] - Dados do novo sócio a ser adicionado
-  ///
-  /// Retorna uma nova instância com o sócio adicionado.
+  /// Retorna uma nova instância com o sócio adicionado e marca a lista como alterada.
   BusinessPartnersValues addPartner(BusinessPartnerData partner) {
-    return copyWith(partners: [...partners, partner]);
+    final updated = [...partners, partner];
+    final next = copyWith(partners: updated);
+    next.markDirty('partners');
+    return next;
   }
 
   /// Remove um sócio da coleção pelo índice.
   ///
-  /// [index] - Índice do sócio a ser removido
-  ///
-  /// Retorna uma nova instância sem o sócio removido.
-  /// Se o índice for inválido, retorna a instância atual inalterada.
+  /// Retorna uma nova instância sem o sócio removido e marca como alterada.
   BusinessPartnersValues removePartner(int index) {
     if (index < 0 || index >= partners.length) return this;
-    final updatedPartners = List<BusinessPartnerData>.from(partners);
-    updatedPartners.removeAt(index);
-    return copyWith(partners: updatedPartners);
+    final updated = List<BusinessPartnerData>.from(partners)..removeAt(index);
+    final next = copyWith(partners: updated);
+    next.markDirty('partners');
+    return next;
   }
 
   /// Atualiza um sócio específico na coleção.
   ///
-  /// [index] - Índice do sócio a ser atualizado
-  /// [partner] - Novos dados do sócio
-  ///
-  /// Retorna uma nova instância com o sócio atualizado.
-  /// Se o índice for inválido, retorna a instância atual inalterada.
+  /// Retorna uma nova instância com o sócio atualizado e marca a lista como alterada.
   BusinessPartnersValues updatePartner(int index, BusinessPartnerData partner) {
     if (index < 0 || index >= partners.length) return this;
-    final updatedPartners = List<BusinessPartnerData>.from(partners);
-    updatedPartners[index] = partner;
-    return copyWith(partners: updatedPartners);
+    final updated = List<BusinessPartnerData>.from(partners);
+    updated[index] = partner;
+    final next = copyWith(partners: updated);
+    next.markDirty('partners');
+    return next;
   }
 
   /// Cria uma cópia da instância com os valores especificados alterados.
   ///
-  /// Implementa o padrão copy-with para imutabilidade.
+  /// Mantém o rastreamento de campos alterados.
   BusinessPartnersValues copyWith({
     List<BusinessPartnerData>? partners,
+    Set<String>? dirtyFields,
   }) {
-    return BusinessPartnersValues(
+    final copy = BusinessPartnersValues(
       partners: partners ?? this.partners,
     );
+    if (dirtyFields != null) copy.dirtyFields.addAll(dirtyFields);
+    return copy;
   }
 
-  factory BusinessPartnersValues.empty() {
-    return BusinessPartnersValues(partners: [BusinessPartnerData.empty()]);
-  }
+  factory BusinessPartnersValues.empty() =>
+      BusinessPartnersValues(partners: [BusinessPartnerData.empty()]);
 
-  /// Factory constructor que cria uma instância a partir de um mapa.
-  ///
-  /// [map] - Mapa contendo os dados serializados da coleção de sócios
   factory BusinessPartnersValues.fromMap(Map<String, dynamic> map) {
     final partnersData = map['partners'] as List<dynamic>? ?? [];
     final partners = partnersData
@@ -200,16 +247,40 @@ class BusinessPartnersValues extends BaseCheckpointValues {
         )
         .toList();
 
-    return BusinessPartnersValues(partners: partners);
+    final instance = BusinessPartnersValues(partners: partners);
+    if (map['dirty_fields'] != null) {
+      instance.dirtyFields.addAll(List<String>.from(map['dirty_fields']));
+    }
+    return instance;
   }
 
   @override
-  Map<String, dynamic> toMap() {
-    return {
-      'partners': partners.map((partner) => partner.toMap()).toList(),
-    };
-  }
+  Map<String, dynamic> toMap() => {
+    'partners': partners.map((p) => p.toMap()).toList(),
+    'dirty_fields': dirtyFields.toList(),
+  };
 
+  /// Retorna apenas as alterações relevantes para sincronização incremental
+  /// com a API.
   @override
-  List<Object?> get props => [partners];
+  Map<String, dynamic> toDirtyMap() {
+    final changedPartners = partners
+        .where((p) => p.isDirty)
+        .map((p) => p.toDirtyMap())
+        .toList();
+
+    final result = <String, dynamic>{};
+
+    if (dirtyFields.contains('partners')) {
+      result['partners'] = partners.map((p) => p.toMap()).toList();
+    } else if (changedPartners.isNotEmpty) {
+      result['partners'] = changedPartners;
+    }
+
+    if (dirtyFields.isNotEmpty) {
+      result['dirty_fields'] = dirtyFields.toList();
+    }
+
+    return result;
+  }
 }

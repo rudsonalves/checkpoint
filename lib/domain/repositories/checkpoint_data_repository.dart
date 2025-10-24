@@ -1,35 +1,28 @@
-import 'package:checkpoint/domain/entities/checkpoint/checkpoint_data.dart';
-import 'package:checkpoint/domain/enums/checkpoint_enum.dart';
 import 'package:result_dart/result_dart.dart';
 
+import '/domain/entities/checkpoint/checkpoint_data.dart';
+import '/domain/entities/checkpoint/checkpoint_values/base_checkpoint_values.dart';
+
 abstract interface class CheckpointDataRepository {
-  /// Obtém o checkpoint atual do cache/memória
-  CheckpointData get currentCheckpointData;
+  CheckpointData get checkpointData;
 
-  /// Carrega o checkpoint do secure storage
-  AsyncResult<CheckpointData> loadCheckpointData();
+  AsyncResult<CheckpointData> getCheckpointData();
 
-  /// Salva o checkpoint no secure storage
+  AsyncResult<Unit> createCheckpointSection<T extends BaseCheckpointValues>(
+    T values,
+  );
+
   AsyncResult<Unit> saveCheckpointData(CheckpointData checkpointData);
 
-  /// Atualiza uma seção específica do checkpoint
+  AsyncResult<Unit> syncWithApi();
+
+  bool hasSectionData(CheckpointStage stage);
+
   AsyncResult<CheckpointData> updateSection({
     required CheckpointStage stage,
     required CheckpointSectionData sectionData,
+    // CheckpointStage? nextStage,
   });
 
-  /// Avança para o próximo estágio
-  AsyncResult<CheckpointData> moveToNextStage(CheckpointStage nextStage);
-
-  /// Marca o processo como completo
-  AsyncResult<CheckpointData> completeCheckpoint();
-
-  /// Limpa todos os dados do checkpoint
   AsyncResult<Unit> clearCheckpointData();
-
-  /// Sincroniza com a API (implementação futura)
-  AsyncResult<Unit> syncWithApi();
-
-  /// Verifica se uma seção foi preenchida
-  bool hasSectionData(CheckpointStage stage);
 }

@@ -21,8 +21,6 @@ export 'checkpoint_values/personal_account_values.dart';
 /// - O estágio atual do processo
 /// - Status de completude
 /// - Dados de todas as seções já preenchidas
-///
-/// A classe é imutável e utiliza o padrão copy-with para atualizações.
 class CheckpointData extends Equatable {
   final CheckpointStage currentStage;
   final bool isCompleted;
@@ -93,21 +91,21 @@ class CheckpointData extends Equatable {
   ///
   /// Retorna uma nova instância de [CheckpointData] com a seção atualizada
   /// e possivelmente um novo estágio atual.
-  CheckpointData withSection({
-    required CheckpointStage stage,
-    required CheckpointSectionData sectionData,
-    // CheckpointStage? nextStage,
-  }) {
-    final updatedSections = Map<CheckpointStage, CheckpointSectionData>.from(
-      sections,
-    );
-    updatedSections[stage] = sectionData;
+  // CheckpointData withSection({
+  //   required CheckpointStage stage,
+  //   required CheckpointSectionData sectionData,
+  //   // CheckpointStage? nextStage,
+  // }) {
+  //   final updatedSections = Map<CheckpointStage, CheckpointSectionData>.from(
+  //     sections,
+  //   );
+  //   updatedSections[stage] = sectionData;
 
-    return copyWith(
-      sections: updatedSections,
-      currentStage: stage, // nextStage ?? _getNextStage(stage),
-    );
-  }
+  //   return copyWith(
+  //     sections: updatedSections,
+  //     currentStage: stage, // nextStage ?? _getNextStage(stage),
+  //   );
+  // }
 
   /// Determina o próximo estágio baseado no estágio atual.
   ///
@@ -238,28 +236,28 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     String? rgIssuerStateAbbreviation,
     DateTime? rgIssueDate,
   }) {
-    final currentValues = personalAccountValues;
-    if (currentValues == null) return this;
-
-    final updatedValues = currentValues.copyWith(
-      name: name,
-      cpf: cpf,
-      email: email,
-      phone: phone,
-      password: password,
-      passwordConfirmation: passwordConfirmation,
-      rgNumber: rgNumber,
-      rgIssuer: rgIssuer,
-      rgIssuerStateId: rgIssuerStateId,
-      rgIssuerStateAbbreviation: rgIssuerStateAbbreviation,
-      rgIssueDate: rgIssueDate,
+    final values = personalAccountValues ?? PersonalAccountValues();
+    sections[CheckpointStage.createPersonalAccount] = CheckpointSection(
+      values: values,
     );
 
-    return withSection(
-      stage: CheckpointStage.createPersonalAccount,
-      sectionData: CheckpointSection(values: updatedValues),
-      // nextStage: currentStage, // Mantém o estágio atual
-    );
+    if (name != null) values.name = name;
+    if (cpf != null) values.cpf = cpf;
+    if (email != null) values.email = email;
+    if (phone != null) values.phone = phone;
+    if (password != null) values.password = password;
+    if (passwordConfirmation != null) {
+      values.passwordConfirmation = passwordConfirmation;
+    }
+    if (rgNumber != null) values.rgNumber = rgNumber;
+    if (rgIssuer != null) values.rgIssuer = rgIssuer;
+    if (rgIssuerStateId != null) values.rgIssuerStateId = rgIssuerStateId;
+    if (rgIssuerStateAbbreviation != null) {
+      values.rgIssuerStateAbbreviation = rgIssuerStateAbbreviation;
+    }
+    if (rgIssueDate != null) values.rgIssueDate = rgIssueDate;
+
+    return this;
   }
 
   /// Atualiza campos específicos da conta empresarial.
@@ -273,7 +271,10 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     String? municipalRegistration,
     String? legalName,
     String? tradeName,
+    DateTime? openingDate,
     String? phone,
+    String? email,
+    String? averageMonthlyRevenue,
     String? revenueOptionId,
     String? zipCode,
     String? state,
@@ -283,36 +284,35 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     String? number,
     String? complement,
     DateTime? addressStartDate,
-    String? email,
-    String? openingDate,
   }) {
-    final currentValues = businessAccountValues;
-    if (currentValues == null) return this;
-
-    final updatedValues = currentValues.copyWith(
-      cnpj: cnpj,
-      municipalRegistration: municipalRegistration,
-      legalName: legalName,
-      tradeName: tradeName,
-      phone: phone,
-      revenueOptionId: revenueOptionId,
-      zipCode: zipCode,
-      state: state,
-      city: city,
-      neighborhood: neighborhood,
-      streetAddress: streetAddress,
-      number: number,
-      complement: complement,
-      addressStartDate: addressStartDate,
-      email: email,
-      openingDate: openingDate,
+    final values = businessAccountValues ?? BusinessAccountValues();
+    sections[CheckpointStage.createBusinessAccount] = CheckpointSection(
+      values: values,
     );
 
-    return withSection(
-      stage: CheckpointStage.createBusinessAccount,
-      sectionData: CheckpointSection(values: updatedValues),
-      // nextStage: currentStage, // Mantém o estágio atual
-    );
+    if (cnpj != null) values.cnpj = cnpj;
+    if (municipalRegistration != null) {
+      values.municipalRegistration = municipalRegistration;
+    }
+    if (legalName != null) values.legalName = legalName;
+    if (tradeName != null) values.tradeName = tradeName;
+    if (openingDate != null) values.openingDate = openingDate;
+    if (phone != null) values.phone = phone;
+    if (email != null) values.email = email;
+    if (averageMonthlyRevenue != null) {
+      values.averageMonthlyRevenue = averageMonthlyRevenue;
+    }
+    if (revenueOptionId != null) values.revenueOptionId = revenueOptionId;
+    if (zipCode != null) values.zipCode = zipCode;
+    if (state != null) values.state = state;
+    if (city != null) values.city = city;
+    if (neighborhood != null) values.neighborhood = neighborhood;
+    if (streetAddress != null) values.streetAddress = streetAddress;
+    if (number != null) values.number = number;
+    if (complement != null) values.complement = complement;
+    if (addressStartDate != null) values.addressStartDate = addressStartDate;
+
+    return this;
   }
 
   /// Adiciona um novo sócio empresarial.
@@ -322,15 +322,14 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
   /// Retorna uma nova instância com o sócio adicionado.
   CheckpointData addBusinessPartner(BusinessPartnerData partner) {
     final currentCollection =
-        businessPartnersCollection ?? const BusinessPartnersValues();
+        businessPartnersCollection ?? BusinessPartnersValues();
 
     final updatedCollection = currentCollection.addPartner(partner);
-
-    return withSection(
-      stage: CheckpointStage.registerBusinessPartners,
-      sectionData: CheckpointSection(values: updatedCollection),
-      // nextStage: currentStage, // Mantém no mesmo estágio para adicionar mais
+    sections[CheckpointStage.registerBusinessPartners] = CheckpointSection(
+      values: updatedCollection,
     );
+
+    return this;
   }
 
   /// Remove um sócio empresarial pelo índice.
@@ -338,18 +337,18 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
   /// [index] - Índice do sócio a ser removido
   ///
   /// Retorna uma nova instância sem o sócio removido.
-  /// Se o índice for inválido ou não existir coleção, retorna a instância atual.
+  /// Se o índice for inválido ou não existir coleção, retorna a instância
+  /// atual.
   CheckpointData removeBusinessPartner(int index) {
     final currentCollection = businessPartnersCollection;
     if (currentCollection == null) return this;
 
     final updatedCollection = currentCollection.removePartner(index);
-
-    return withSection(
-      stage: CheckpointStage.registerBusinessPartners,
-      sectionData: CheckpointSection(values: updatedCollection),
-      // nextStage: currentStage,
+    sections[CheckpointStage.registerBusinessPartners] = CheckpointSection(
+      values: updatedCollection,
     );
+
+    return this;
   }
 
   /// Atualiza um sócio específico.
@@ -358,18 +357,18 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
   /// [partner] - Novos dados do sócio
   ///
   /// Retorna uma nova instância com o sócio atualizado.
-  /// Se o índice for inválido ou não existir coleção, retorna a instância atual.
+  /// Se o índice for inválido ou não existir coleção, retorna a instância
+  /// atual.
   CheckpointData updateBusinessPartner(int index, BusinessPartnerData partner) {
     final currentCollection = businessPartnersCollection;
     if (currentCollection == null) return this;
 
     final updatedCollection = currentCollection.updatePartner(index, partner);
-
-    return withSection(
-      stage: CheckpointStage.registerBusinessPartners,
-      sectionData: CheckpointSection(values: updatedCollection),
-      // nextStage: currentStage,
+    sections[CheckpointStage.registerBusinessPartners] = CheckpointSection(
+      values: updatedCollection,
     );
+
+    return this;
   }
 
   /// Atualiza campos específicos de um sócio empresarial.
@@ -377,7 +376,8 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
   /// [index] - Índice do sócio a ser atualizado
   /// Apenas os campos fornecidos serão atualizados, os demais permanecerão
   /// inalterados.
-  /// Se não existir coleção ou o índice for inválido, retorna a instância atual.
+  /// Se não existir coleção ou o índice for inválido, retorna a instância
+  /// atual.
   CheckpointData updateBusinessPartnerFields(
     int index, {
     String? companyId,
@@ -395,20 +395,21 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     final partners = businessPartnersValues;
     if (index < 0 || index >= partners.length) return this;
 
-    final updatedPartner = partners[index].copyWith(
-      companyId: companyId,
-      fullName: fullName,
-      email: email,
-      isPoliticallyExposed: isPoliticallyExposed,
-      zipCode: zipCode,
-      state: state,
-      city: city,
-      district: district,
-      street: street,
-      number: number,
-      complement: complement,
-    );
+    final values = partners[index];
+    if (companyId != null) values.companyId = companyId;
+    if (fullName != null) values.fullName = fullName;
+    if (email != null) values.email = email;
+    if (isPoliticallyExposed != null) {
+      values.isPoliticallyExposed = isPoliticallyExposed;
+    }
+    if (zipCode != null) values.zipCode = zipCode;
+    if (state != null) values.state = state;
+    if (city != null) values.city = city;
+    if (district != null) values.district = district;
+    if (street != null) values.street = street;
+    if (number != null) values.number = number;
+    if (complement != null) values.complement = complement;
 
-    return updateBusinessPartner(index, updatedPartner);
+    return this;
   }
 }
