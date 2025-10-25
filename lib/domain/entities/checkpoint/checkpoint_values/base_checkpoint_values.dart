@@ -38,12 +38,10 @@ abstract class BaseCheckpointValues {
 }
 
 extension BaseCheckpointValuesStage on BaseCheckpointValues {
-  CheckpointStage get stage {
-    return switch (this) {
-      PersonalAccountValues _ => CheckpointStage.createPersonalAccount,
-      BusinessAccountValues _ => CheckpointStage.createBusinessAccount,
-      BusinessPartnersValues _ => CheckpointStage.registerBusinessPartners,
-      _ => CheckpointStage.unknown,
-    };
-  }
+  CheckpointStage get inferredStage => switch (this) {
+    PersonalAccountValues _ => CheckpointStage.createPersonalAccount,
+    BusinessAccountValues _ => CheckpointStage.createBusinessAccount,
+    BusinessPartnersValues _ => CheckpointStage.registerBusinessPartners,
+    _ => CheckpointStage.unknown,
+  };
 }

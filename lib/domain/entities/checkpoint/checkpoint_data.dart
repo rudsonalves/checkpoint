@@ -17,20 +17,37 @@ export 'checkpoint_values/personal_account_values.dart';
 /// - Status de completude
 /// - Dados de todas as seções já preenchidas
 class CheckpointData {
-  final CheckpointStage currentStage;
-  final bool isCompleted;
-  final Map<CheckpointStage, CheckpointSectionData> sections;
+  CheckpointStage _currentStage;
+  bool _isCompleted;
+  final Map<CheckpointStage, CheckpointSectionData> _sections;
 
-  const CheckpointData({
-    required this.currentStage,
-    required this.isCompleted,
-    this.sections = const {},
-  });
+  CheckpointData({
+    required CheckpointStage currentStage,
+    required bool isCompleted,
+    Map<CheckpointStage, CheckpointSectionData> sections = const {},
+  }) : _currentStage = currentStage,
+       _isCompleted = isCompleted,
+       _sections = sections;
 
-  factory CheckpointData.empty() => const CheckpointData(
+  CheckpointStage get currentStage => _currentStage;
+  bool get isCompleted => _isCompleted;
+  Map<CheckpointStage, CheckpointSectionData> get sections =>
+      Map.unmodifiable(_sections);
+
+  factory CheckpointData.empty() => CheckpointData(
     currentStage: CheckpointStage.noExistAccount,
     isCompleted: false,
   );
+
+  void setSectionData(CheckpointStage stage, CheckpointSectionData section) =>
+      _sections[stage] = section;
+
+  void setSection<T extends BaseCheckpointValues>(
+    CheckpointStage stage,
+    T values,
+  ) {
+    _sections[stage] = CheckpointSection(values: values);
+  }
 
   factory CheckpointData.newPerson() => CheckpointData(
     currentStage: CheckpointStage.createPersonalAccount,
@@ -43,61 +60,35 @@ class CheckpointData {
     },
   );
 
-  Map<String, dynamic> toMap() {
-    final sectionsData = <String, Map<String, dynamic>>{};
-
-    // for (final entry in sections.entries) {
-    //   sectionsData[entry.key.stageName] = {
-    //     'data': entry.value.toMap(),
-    //   };
-    // }
-
-    return {
-      'current_stage': currentStage.stageName,
-      'is_completed': isCompleted,
-      'sections': sectionsData,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+    'current_stage': _currentStage.stageName,
+    'is_completed': _isCompleted,
+    'sections': <String, Map<String, dynamic>>{},
+  };
 
   Map<String, dynamic> toFullMap() {
     final sectionsData = <String, Map<String, dynamic>>{};
 
-    for (final entry in sections.entries) {
+    for (final entry in _sections.entries) {
       sectionsData[entry.key.stageName] = {
         'data': entry.value.toMap(),
       };
     }
 
     return {
-      'current_stage': currentStage.stageName,
-      'is_completed': isCompleted,
+      'current_stage': _currentStage.stageName,
+      'is_completed': _isCompleted,
       'sections': sectionsData,
     };
   }
 
   String toFullJson() => json.encode(toFullMap());
 
-  factory CheckpointData.fromMap(Map<String, dynamic> map) {
-    final sectionsMap = <CheckpointStage, CheckpointSectionData>{};
-    // final sectionsData = map['sections'] as Map<String, dynamic>? ?? {};
-
-    // for (final entry in sectionsData.entries) {
-    //   final stage = CheckpointStage.fromString(entry.key);
-    //   final sectionData = entry.value as Map<String, dynamic>;
-    //   final data = sectionData['data'] as Map<String, dynamic>? ?? {};
-
-    //   sectionsMap[stage] = CheckpointSectionData.fromMap(
-    //     stage: stage,
-    //     data: data,
-    //   );
-    // }
-
-    return CheckpointData(
-      currentStage: CheckpointStage.fromString(map['current_stage'] ?? ''),
-      isCompleted: map['is_completed'] ?? false,
-      sections: sectionsMap,
-    );
-  }
+  factory CheckpointData.fromMap(Map<String, dynamic> map) => CheckpointData(
+    currentStage: CheckpointStage.fromString(map['current_stage'] ?? ''),
+    isCompleted: map['is_completed'] ?? false,
+    sections: <CheckpointStage, CheckpointSectionData>{},
+  );
 
   String toJson() => json.encode(toMap());
 
@@ -111,7 +102,7 @@ class CheckpointData {
   Map<String, dynamic> toDirtyMap() {
     final dirtySections = <String, Map<String, dynamic>>{};
 
-    for (final entry in sections.entries) {
+    for (final entry in _sections.entries) {
       final section = entry.value;
       // Só processa se for CheckpointSection e os valores forem
       // BaseCheckpointValues
@@ -126,14 +117,14 @@ class CheckpointData {
     }
 
     return {
-      'current_stage': currentStage.stageName,
-      'is_completed': isCompleted,
+      'current_stage': _currentStage.stageName,
+      'is_completed': _isCompleted,
       'sections': dirtySections,
     };
   }
 
   void markAllClean() {
-    for (final section in sections.values) {
+    for (final section in _sections.values) {
       if (section is CheckpointSection) {
         final values = section.values;
         values.markClean();
@@ -142,7 +133,7 @@ class CheckpointData {
   }
 
   bool get hasAnyDirtyFields {
-    for (final section in sections.values) {
+    for (final section in _sections.values) {
       if (section is CheckpointSection) {
         if (section.values.isDirty) return true;
       }
@@ -156,33 +147,15 @@ class CheckpointData {
   ///
   /// Retorna true se a seção existe e contém dados (não é uma EmptySection).
   bool hasSectionData(CheckpointStage stage) =>
-      sections.containsKey(stage) && sections[stage] is! EmptySection;
+      _sections.containsKey(stage) && _sections[stage] is! EmptySection;
 
   /// Marca o checkpoint como completado.
-  ///
-  /// Retorna uma nova instância com isCompleted = true.
-  CheckpointData markAsCompleted() => copyWith(isCompleted: true);
+  void markAsCompleted() => _isCompleted = true;
 
   /// Move o checkpoint para um estágio específico.
   ///
   /// [stage] - O estágio de destino
-  ///
-  /// Útil para navegação manual ou correção de fluxo.
-  CheckpointData moveToStage(CheckpointStage stage) =>
-      copyWith(currentStage: stage);
-
-  /// Cria uma cópia da instância com os valores especificados alterados.
-  ///
-  /// Implementa o padrão copy-with para imutabilidade.
-  CheckpointData copyWith({
-    CheckpointStage? currentStage,
-    bool? isCompleted,
-    Map<CheckpointStage, CheckpointSectionData>? sections,
-  }) => CheckpointData(
-    currentStage: currentStage ?? this.currentStage,
-    isCompleted: isCompleted ?? this.isCompleted,
-    sections: sections ?? this.sections,
-  );
+  void moveToStage(CheckpointStage stage) => _currentStage = stage;
 }
 
 /// Extension que adiciona getters convenientes para acessar dados específicos
@@ -195,7 +168,7 @@ extension CheckpointDataExtensions on CheckpointData {
   ///
   /// Retorna null se os dados pessoais ainda não foram preenchidos.
   PersonalAccountValues? get personalAccountValues =>
-      switch (sections[CheckpointStage.createPersonalAccount]) {
+      switch (_sections[CheckpointStage.createPersonalAccount]) {
         CheckpointSection<PersonalAccountValues> section => section.values,
         _ => null,
       };
@@ -204,7 +177,7 @@ extension CheckpointDataExtensions on CheckpointData {
   ///
   /// Retorna null se os dados empresariais ainda não foram preenchidos.
   BusinessAccountValues? get businessAccountValues =>
-      switch (sections[CheckpointStage.createBusinessAccount]) {
+      switch (_sections[CheckpointStage.createBusinessAccount]) {
         CheckpointSection<BusinessAccountValues> section => section.values,
         _ => null,
       };
@@ -214,7 +187,7 @@ extension CheckpointDataExtensions on CheckpointData {
   /// Retorna uma lista com todos os sócios cadastrados no processo.
   /// Se nenhum sócio foi cadastrado, retorna uma lista vazia.
   List<BusinessPartnerData> get businessPartnersValues =>
-      switch (sections[CheckpointStage.registerBusinessPartners]) {
+      switch (_sections[CheckpointStage.registerBusinessPartners]) {
         CheckpointSection<BusinessPartnersValues> section =>
           section.values.partners,
         _ => <BusinessPartnerData>[],
@@ -224,7 +197,7 @@ extension CheckpointDataExtensions on CheckpointData {
   ///
   /// Retorna null se a seção de sócios ainda não foi inicializada.
   BusinessPartnersValues? get businessPartnersCollection =>
-      switch (sections[CheckpointStage.registerBusinessPartners]) {
+      switch (_sections[CheckpointStage.registerBusinessPartners]) {
         CheckpointSection<BusinessPartnersValues> section => section.values,
         _ => null,
       };
@@ -233,8 +206,8 @@ extension CheckpointDataExtensions on CheckpointData {
 /// Extension que adiciona métodos para atualizar campos específicos das seções
 /// aproveitando os métodos copyWith das classes de valores.
 ///
-/// Permite atualizações granulares sem precisar recriar objetos inteiros,
-/// mantendo a imutabilidade e facilitando o uso.
+/// Permite atualizações granulares sem precisar recriar objetos inteiros
+/// e facilitando o uso.
 extension CheckpointDataUpdateExtensions on CheckpointData {
   /// Atualiza campos específicos da conta pessoal.
   ///
@@ -256,7 +229,7 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     DateTime? rgIssueDate,
   }) {
     final values = personalAccountValues ?? PersonalAccountValues();
-    sections[CheckpointStage.createPersonalAccount] = CheckpointSection(
+    _sections[CheckpointStage.createPersonalAccount] = CheckpointSection(
       values: values,
     );
 
@@ -305,7 +278,7 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
     DateTime? addressStartDate,
   }) {
     final values = businessAccountValues ?? BusinessAccountValues();
-    sections[CheckpointStage.createBusinessAccount] = CheckpointSection(
+    _sections[CheckpointStage.createBusinessAccount] = CheckpointSection(
       values: values,
     );
 
@@ -337,57 +310,29 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
   /// Adiciona um novo sócio empresarial.
   ///
   /// [partner] - Dados do novo sócio a ser adicionado
-  ///
-  /// Retorna uma nova instância com o sócio adicionado.
-  CheckpointData addBusinessPartner(BusinessPartnerData partner) {
+  void addBusinessPartner(BusinessPartnerData partner) {
     final currentCollection =
         businessPartnersCollection ?? BusinessPartnersValues();
-
-    final updatedCollection = currentCollection.addPartner(partner);
-    sections[CheckpointStage.registerBusinessPartners] = CheckpointSection(
-      values: updatedCollection,
-    );
-
-    return this;
+    currentCollection.addPartner(partner);
   }
 
   /// Remove um sócio empresarial pelo índice.
   ///
   /// [index] - Índice do sócio a ser removido
-  ///
-  /// Retorna uma nova instância sem o sócio removido.
-  /// Se o índice for inválido ou não existir coleção, retorna a instância
-  /// atual.
-  CheckpointData removeBusinessPartner(int index) {
+  void removeBusinessPartner(int index) {
     final currentCollection = businessPartnersCollection;
-    if (currentCollection == null) return this;
-
-    final updatedCollection = currentCollection.removePartner(index);
-    sections[CheckpointStage.registerBusinessPartners] = CheckpointSection(
-      values: updatedCollection,
-    );
-
-    return this;
+    if (currentCollection == null) return;
+    currentCollection.removePartner(index);
   }
 
   /// Atualiza um sócio específico.
   ///
   /// [index] - Índice do sócio a ser atualizado
   /// [partner] - Novos dados do sócio
-  ///
-  /// Retorna uma nova instância com o sócio atualizado.
-  /// Se o índice for inválido ou não existir coleção, retorna a instância
-  /// atual.
-  CheckpointData updateBusinessPartner(int index, BusinessPartnerData partner) {
+  void updateBusinessPartner(int index, BusinessPartnerData partner) {
     final currentCollection = businessPartnersCollection;
-    if (currentCollection == null) return this;
-
-    final updatedCollection = currentCollection.updatePartner(index, partner);
-    sections[CheckpointStage.registerBusinessPartners] = CheckpointSection(
-      values: updatedCollection,
-    );
-
-    return this;
+    if (currentCollection == null) return;
+    currentCollection.updatePartner(index, partner);
   }
 
   /// Atualiza campos específicos de um sócio empresarial.

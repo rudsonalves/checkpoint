@@ -3,17 +3,41 @@ import 'dart:convert';
 import 'base_checkpoint_values.dart';
 
 class PersonalAccountValues extends BaseCheckpointValues {
-  String _name = '';
-  String _cpf = '';
-  String _email = '';
-  String _phone = '';
-  String _password = '';
-  String _passwordConfirmation = '';
-  String _rgNumber = '';
-  String _rgIssuer = '';
+  String _name;
+  String _cpf;
+  String _email;
+  String _phone;
+  String _password;
+  String _passwordConfirmation;
+  String _rgNumber;
+  String _rgIssuer;
   String? _rgIssuerStateId;
-  String _rgIssuerStateAbbreviation = '';
-  DateTime _rgIssueDate = DateTime.now();
+  String _rgIssuerStateAbbreviation;
+  DateTime _rgIssueDate;
+
+  PersonalAccountValues({
+    String name = '',
+    String cpf = '',
+    String email = '',
+    String phone = '',
+    String password = '',
+    String passwordConfirmation = '',
+    String rgNumber = '',
+    String rgIssuer = '',
+    String? rgIssuerStateId,
+    DateTime? rgIssueDate,
+    String rgIssuerStateAbbreviation = '',
+  }) : _name = name,
+       _cpf = cpf,
+       _email = email,
+       _phone = phone,
+       _password = password,
+       _passwordConfirmation = passwordConfirmation,
+       _rgNumber = rgNumber,
+       _rgIssuer = rgIssuer,
+       _rgIssuerStateId = rgIssuerStateId,
+       _rgIssueDate = rgIssueDate ?? DateTime.now(),
+       _rgIssuerStateAbbreviation = rgIssuerStateAbbreviation;
 
   String get name => _name;
   String get cpf => _cpf;
@@ -107,30 +131,6 @@ class PersonalAccountValues extends BaseCheckpointValues {
     }
   }
 
-  PersonalAccountValues({
-    String name = '',
-    String cpf = '',
-    String email = '',
-    String phone = '',
-    String password = '',
-    String passwordConfirmation = '',
-    String rgNumber = '',
-    String rgIssuer = '',
-    String rgIssuerStateId = '',
-    DateTime? rgIssueDate,
-    String rgIssuerStateAbbreviation = '',
-  }) : _name = name,
-       _cpf = cpf,
-       _email = email,
-       _phone = phone,
-       _password = password,
-       _passwordConfirmation = passwordConfirmation,
-       _rgNumber = rgNumber,
-       _rgIssuer = rgIssuer,
-       _rgIssuerStateId = rgIssuerStateId,
-       _rgIssueDate = rgIssueDate ?? DateTime.now(),
-       _rgIssuerStateAbbreviation = rgIssuerStateAbbreviation;
-
   factory PersonalAccountValues.empty() => PersonalAccountValues();
 
   factory PersonalAccountValues.fromMap(Map<String, dynamic> map) {
@@ -143,9 +143,10 @@ class PersonalAccountValues extends BaseCheckpointValues {
       passwordConfirmation: map['password_confirmation'] ?? '',
       rgNumber: map['rg_number'] ?? '',
       rgIssuer: map['rg_issuer'] ?? '',
-      rgIssuerStateId: map['rg_issuer_state_id'] ?? '',
+      rgIssuerStateId: map['rg_issuer_state_id'],
       rgIssueDate:
-          DateTime.tryParse(map['rg_issue_date'] ?? '') ?? DateTime.now(),
+          DateTime.tryParse(map['rg_issue_date'] ?? '')?.toLocal() ??
+          DateTime.now(),
       rgIssuerStateAbbreviation: map['rg_issuer_state_abbreviation'] ?? '',
     );
 

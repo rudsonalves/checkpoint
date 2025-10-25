@@ -35,23 +35,8 @@ abstract class CheckpointSectionData {
     required CheckpointStage stage,
     required String json,
   }) {
-    switch (stage) {
-      case CheckpointStage.createPersonalAccount:
-        return CheckpointSection(
-          values: PersonalAccountValues.fromJson(json),
-        );
-      case CheckpointStage.createBusinessAccount:
-        return CheckpointSection(
-          values: BusinessAccountValues.fromJson(json),
-        );
-      case CheckpointStage.registerBusinessPartners:
-        return CheckpointSection(
-          values: BusinessPartnersValues.fromJson(json),
-        );
-      case CheckpointStage.noExistAccount:
-      case CheckpointStage.unknown:
-        return const EmptySection();
-    }
+    final map = jsonDecode(json) as Map<String, dynamic>;
+    return CheckpointSectionData.fromMap(stage: stage, data: map);
   }
 
   Map<String, dynamic> toMap();
@@ -79,5 +64,5 @@ class CheckpointSection<T extends BaseCheckpointValues>
   Map<String, dynamic> toMap() => values.toMap();
 
   @override
-  String toJson() => jsonEncode(toMap());
+  String toJson() => values.toJson();
 }
