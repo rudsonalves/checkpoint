@@ -16,6 +16,30 @@ class BusinessPartnerData extends BaseCheckpointValues {
   String _number;
   String? _complement;
 
+  BusinessPartnerData({
+    String companyId = '',
+    String fullName = '',
+    String email = '',
+    bool isPoliticallyExposed = false,
+    String zipCode = '',
+    String state = '',
+    String city = '',
+    String district = '',
+    String street = '',
+    String number = '',
+    String? complement,
+  }) : _companyId = companyId,
+       _fullName = fullName,
+       _email = email,
+       _isPoliticallyExposed = isPoliticallyExposed,
+       _zipCode = zipCode,
+       _state = state,
+       _city = city,
+       _district = district,
+       _street = street,
+       _number = number,
+       _complement = complement;
+
   String get companyId => _companyId;
   String get fullName => _fullName;
   String get email => _email;
@@ -108,30 +132,6 @@ class BusinessPartnerData extends BaseCheckpointValues {
     }
   }
 
-  BusinessPartnerData({
-    String companyId = '',
-    String fullName = '',
-    String email = '',
-    bool isPoliticallyExposed = false,
-    String zipCode = '',
-    String state = '',
-    String city = '',
-    String district = '',
-    String street = '',
-    String number = '',
-    String? complement,
-  }) : _companyId = companyId,
-       _fullName = fullName,
-       _email = email,
-       _isPoliticallyExposed = isPoliticallyExposed,
-       _zipCode = zipCode,
-       _state = state,
-       _city = city,
-       _district = district,
-       _street = street,
-       _number = number,
-       _complement = complement;
-
   factory BusinessPartnerData.empty() => BusinessPartnerData();
 
   /// Reconstrói a lista de sócios e restaura os campos marcados como sujos.
@@ -140,14 +140,16 @@ class BusinessPartnerData extends BaseCheckpointValues {
       companyId: map['company_id'] ?? '',
       fullName: map['full_name'] ?? '',
       email: map['email'] ?? '',
-      isPoliticallyExposed: map['is_politically_exposed'] ?? false,
+      isPoliticallyExposed: map['is_politically_exposed'] is bool
+          ? map['is_politically_exposed']
+          : map['is_politically_exposed'].toString() == 'true',
       zipCode: map['zip_code'] ?? '',
       state: map['state'] ?? '',
       city: map['city'] ?? '',
       district: map['district'] ?? '',
       street: map['street'] ?? '',
       number: map['number'] ?? '',
-      complement: map['complement'] ?? '',
+      complement: map['complement'],
     );
 
     final dirty = map['dirty_fields'];
@@ -190,60 +192,51 @@ class BusinessPartnerData extends BaseCheckpointValues {
 /// atualizar sócios individuais.
 class BusinessPartnersValues extends BaseCheckpointValues {
   /// Lista de todos os sócios empresariais cadastrados.
-  final List<BusinessPartnerData> partners;
+  final List<BusinessPartnerData> _partners;
 
-  BusinessPartnersValues({this.partners = const []});
+  List<BusinessPartnerData> get partners => _partners;
+
+  BusinessPartnersValues({List<BusinessPartnerData> partners = const []})
+    : _partners = partners;
 
   @override
   CheckpointStage get stage => CheckpointStage.registerBusinessPartners;
 
   /// Adiciona um novo sócio à coleção.
   ///
-  /// Retorna uma nova instância com o sócio adicionado e marca a lista como alterada.
-  BusinessPartnersValues addPartner(BusinessPartnerData partner) {
-    final updated = [...partners, partner];
-    final next = copyWith(partners: updated);
-    next.markDirty('partners');
-    return next;
+  /// Retorna uma nova instância com o sócio adicionado e marca a lista como
+  /// alterada.
+  void addPartner(BusinessPartnerData partner) {
+    _partners.add(partner);
+    markDirty('partners');
   }
 
   /// Remove um sócio da coleção pelo índice.
   ///
   /// Retorna uma nova instância sem o sócio removido e marca como alterada.
-  BusinessPartnersValues removePartner(int index) {
-    if (index < 0 || index >= partners.length) return this;
-    final updated = List<BusinessPartnerData>.from(partners)..removeAt(index);
-    final next = copyWith(partners: updated);
-    next.markDirty('partners');
-    return next;
+  void removePartner(int index) {
+    if (index < 0 || index >= _partners.length) return;
+    _partners.removeAt(index);
+    markDirty('partners');
   }
 
   /// Atualiza um sócio específico na coleção.
   ///
-  /// Retorna uma nova instância com o sócio atualizado e marca a lista como alterada.
-  BusinessPartnersValues updatePartner(int index, BusinessPartnerData partner) {
-    if (index < 0 || index >= partners.length) return this;
-    final updated = List<BusinessPartnerData>.from(partners);
-    updated[index] = partner;
-    final next = copyWith(partners: updated);
-    next.markDirty('partners');
-    return next;
+  /// Retorna uma nova instância com o sócio atualizado e marca a lista como
+  /// alterada.
+  void updatePartner(int index, BusinessPartnerData partner) {
+    if (index < 0 || index >= _partners.length) return;
+    _partners[index] = partner;
+    markDirty('partners');
   }
 
-  /// Cria uma cópia da instância com os valores especificados alterados.
-  ///
-  /// Mantém o rastreamento de campos alterados.
-  BusinessPartnersValues copyWith({
-    List<BusinessPartnerData>? partners,
-    Set<String>? dirtyFields,
-  }) {
-    final copy = BusinessPartnersValues(
-      partners: partners ?? this.partners,
-    );
-    if (dirtyFields != null) copy.dirtyFields.addAll(dirtyFields);
-    return copy;
+  void createNewPartner() {
+    _partners.add(BusinessPartnerData.empty());
+    markDirty('partners');
   }
 
+  /// Cria um novo sócio vazio para início de preenchimento.
+  /// Usado quando o usuário aciona a opção "Adicionar Sócio".
   factory BusinessPartnersValues.empty() =>
       BusinessPartnersValues(partners: [BusinessPartnerData.empty()]);
 
@@ -264,7 +257,7 @@ class BusinessPartnersValues extends BaseCheckpointValues {
 
   @override
   Map<String, dynamic> toMap() => {
-    'partners': partners.map((p) => p.toMap()).toList(),
+    'partners': _partners.map((p) => p.toMap()).toList(),
     'dirty_fields': dirtyFields.toList(),
   };
 
@@ -272,7 +265,7 @@ class BusinessPartnersValues extends BaseCheckpointValues {
   /// com a API.
   @override
   Map<String, dynamic> toDirtyMap() {
-    final changedPartners = partners
+    final changedPartners = _partners
         .where((p) => p.isDirty)
         .map((p) => p.toDirtyMap())
         .toList();
@@ -280,7 +273,7 @@ class BusinessPartnersValues extends BaseCheckpointValues {
     final result = <String, dynamic>{};
 
     if (dirtyFields.contains('partners')) {
-      result['partners'] = partners.map((p) => p.toMap()).toList();
+      result['partners'] = _partners.map((p) => p.toMap()).toList();
     } else if (changedPartners.isNotEmpty) {
       result['partners'] = changedPartners;
     }

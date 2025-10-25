@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:result_dart/result_dart.dart';
 
 import '/core/extensions/string_extension.dart';
@@ -7,6 +5,12 @@ import '/core/services/secure_storage/local_secure_storage.dart';
 import '/domain/entities/checkpoint/checkpoint_data.dart';
 import '/domain/entities/checkpoint/checkpoint_values/base_checkpoint_values.dart';
 import '/domain/repositories/checkpoint_data_repository.dart';
+
+const stageList = [
+  CheckpointStage.createPersonalAccount,
+  CheckpointStage.createBusinessAccount,
+  CheckpointStage.registerBusinessPartners,
+];
 
 class CheckpointDataRepositoryImpl implements CheckpointDataRepository {
   final LocalSecureStorage _secureStorage;
@@ -17,8 +21,15 @@ class CheckpointDataRepositoryImpl implements CheckpointDataRepository {
 
   CheckpointData _checkpointData = CheckpointData.empty();
 
+  String _sectionKey(CheckpointStage stage) =>
+      '${_storageKey}_${stage.stageName}';
+
   @override
   CheckpointData get checkpointData => _checkpointData;
+
+  @override
+  bool hasSectionData(CheckpointStage stage) =>
+      _checkpointData.hasSectionData(stage);
 
   @override
   AsyncResult<CheckpointData> getCheckpointData() async {
@@ -30,31 +41,27 @@ class CheckpointDataRepositoryImpl implements CheckpointDataRepository {
     }
 
     final source = (result as Success).getOrNull() as String;
-
     final checkpointData = CheckpointData.fromJson(source);
 
-    final sections = <CheckpointStage, CheckpointSectionData>{};
-    for (final stage in [
-      CheckpointStage.createPersonalAccount,
-      CheckpointStage.createBusinessAccount,
-      CheckpointStage.registerBusinessPartners,
-    ]) {
-      final key = 'checkpoint_${stage.stageName}';
-      final jsonStr = (await _secureStorage.read(key)).getOrNull();
+    for (final stage in stageList) {
+      final jsonStr = (await _secureStorage.read(
+        _sectionKey(stage),
+      )).getOrNull();
 
       if (jsonStr != null && jsonStr.isNotEmpty) {
         try {
-          sections[stage] = CheckpointSectionData.fromJson(
+          final section = CheckpointSectionData.fromJson(
             stage: stage,
             json: jsonStr,
           );
+          checkpointData.setSectionData(stage, section);
         } catch (err) {
-          // Ignore
+          // Invalid section data
         }
       }
     }
-    _checkpointData = checkpointData.copyWith(sections: sections);
 
+    _checkpointData = checkpointData;
     return Success(_checkpointData);
   }
 
@@ -64,19 +71,11 @@ class CheckpointDataRepositoryImpl implements CheckpointDataRepository {
   ) async {
     final stage = values.stage;
 
-    if (_checkpointData.hasSectionData(stage)) {
-      return Success(unit);
-    }
+    if (_checkpointData.hasSectionData(stage)) return Success(unit);
 
-    final sections = Map<CheckpointStage, CheckpointSectionData>.from(
-      _checkpointData.sections,
-    );
-    sections[stage] = CheckpointSection<T>(values: values);
-
-    _checkpointData = _checkpointData.copyWith(
-      currentStage: stage,
-      sections: sections,
-    );
+    _checkpointData
+      ..setSection(stage, values)
+      ..moveToStage(stage);
 
     return await saveCheckpointData();
   }
@@ -85,21 +84,24 @@ class CheckpointDataRepositoryImpl implements CheckpointDataRepository {
   AsyncResult<Unit> saveCheckpointData() async {
     if (!_checkpointData.hasAnyDirtyFields) return Success(unit);
 
-    return await _secureStorage
-        .write(_storageKey, _checkpointData.toJson())
-        .flatMap((_) async {
-          for (final entry in _checkpointData.sections.entries) {
-            final sectionData = entry.value;
+    try {
+      await _secureStorage.write(_storageKey, _checkpointData.toJson());
 
-            if (sectionData is CheckpointSection &&
-                sectionData.values.isDirty) {
-              final key = '${_storageKey}_${entry.key.stageName}';
-              await _secureStorage.write(key, sectionData.toJson());
-            }
-          }
+      for (final entry in _checkpointData.sections.entries) {
+        final sectionData = entry.value;
+        if (sectionData is CheckpointSection && sectionData.values.isDirty) {
+          await _secureStorage.write(
+            _sectionKey(entry.key),
+            sectionData.toJson(),
+          );
+        }
+      }
 
-          return Success(unit);
-        });
+      _checkpointData.markAllClean();
+      return Success(unit);
+    } catch (err) {
+      return Failure(Exception('Erro ao salvar dados: $err'));
+    }
   }
 
   @override
@@ -108,34 +110,31 @@ class CheckpointDataRepositoryImpl implements CheckpointDataRepository {
       if (!_checkpointData.hasAnyDirtyFields) return Success(unit);
       await Future.delayed(const Duration(milliseconds: 800));
 
-      log('----------Not implemented----------');
-      log(_checkpointData.toJson());
-      log('-----------------------------------');
-
-      return const Success(unit);
+      // '----- SYNC NOT IMPLEMENTED -----
+      return Success(unit);
     } catch (err) {
       return Failure(Exception('Erro na sincronização: $err'));
     }
   }
 
   @override
-  bool hasSectionData(CheckpointStage stage) {
-    return _checkpointData.hasSectionData(stage);
-  }
-
-  @override
   AsyncResult<Unit> clearCheckpointData({String? cpf}) async {
     try {
-      _checkpointData = CheckpointData.empty();
-      if (cpf == null) return await _secureStorage.delete(_storageKey);
-
-      _checkpointData = CheckpointData.newPerson();
-      _checkpointData.personalAccountValues!.cpf = cpf.onlyNumbers();
-
-      return saveCheckpointData();
+      _checkpointData = _resetCheckpointData(cpf);
+      return await _secureStorage
+          .delete(_storageKey)
+          .flatMap((_) => saveCheckpointData());
     } catch (err) {
-      log(err.toString());
       return Failure(Exception('Erro ao limpar dados: $err'));
     }
+  }
+
+  // ---------- Private ----------
+  CheckpointData _resetCheckpointData(String? cpf) {
+    if (cpf == null) return CheckpointData.empty();
+
+    final data = CheckpointData.newPerson();
+    data.personalAccountValues!.cpf = cpf.onlyNumbers();
+    return data;
   }
 }
