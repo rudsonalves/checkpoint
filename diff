@@ -1,0 +1,1809 @@
+diff --git a/docs/CheckpointData.md b/docs/CheckpointData.md
+new file mode 100644
+index 0000000..8da378d
+--- /dev/null
++++ b/docs/CheckpointData.md
+@@ -0,0 +1,78 @@
++# Documentação da Classe `CheckpointData`
++
++## Visão Geral
++A classe `CheckpointData` representa o estado completo do processo de checkpoint de abertura de conta. Ela gerencia o estágio atual, status de completude e os dados de todas as seções já preenchidas.
++
++---
++
++## Principais Responsabilidades
++- **Estágio Atual:** Indica em qual etapa do processo o usuário está.
++- **Status de Completude:** Informa se o processo foi finalizado.
++- **Dados das Seções:** Armazena os dados preenchidos em cada etapa do fluxo.
++
++---
++
++## Propriedades
++- `currentStage`: Estágio atual do processo (`CheckpointStage`).
++- `isCompleted`: Indica se o checkpoint foi concluído (`bool`).
++- `sections`: Mapeamento dos estágios para seus respectivos dados (`Map<CheckpointStage, CheckpointSectionData>`).
++
++---
++
++## Principais Métodos
++- `toMap()`: Serializa os dados para um `Map<String, dynamic>`.
++- `fromMap(Map<String, dynamic>)`: Cria uma instância a partir de um mapa.
++- `toJson()`: Serializa para JSON.
++- `fromJson(String)`: Cria uma instância a partir de uma string JSON.
++- `hasSectionData(CheckpointStage)`: Verifica se há dados para um estágio específico.
++- `markAsCompleted()`: Marca o checkpoint como concluído.
++- `moveToStage(CheckpointStage)`: Move para um estágio específico.
++- `copyWith(...)`: Cria uma cópia alterando campos específicos.
++
++---
++
++## Extensões
++### `CheckpointDataExtensions`
++- Getters para acessar dados específicos das seções:
++  - `personalAccountValues`: Dados da conta pessoal.
++  - `businessAccountValues`: Dados da conta empresarial.
++  - `businessPartnersValues`: Lista de sócios empresariais.
++  - `businessPartnersCollection`: Coleção completa de sócios.
++
++### `CheckpointDataUpdateExtensions`
++- Métodos para atualizar campos específicos das seções:
++  - `updatePersonalAccount(...)`: Atualiza dados da conta pessoal.
++  - `updateBusinessAccount(...)`: Atualiza dados da conta empresarial.
++  - `addBusinessPartner(BusinessPartnerData)`: Adiciona um sócio empresarial.
++  - `removeBusinessPartner(int)`: Remove um sócio pelo índice.
++  - `updateBusinessPartner(int, BusinessPartnerData)`: Atualiza um sócio pelo índice.
++  - `updateBusinessPartnerFields(...)`: Atualiza campos específicos de um sócio.
++
++---
++
++## Padrão de Imutabilidade
++A classe utiliza o padrão `copyWith` para garantir que as alterações gerem novas instâncias, mantendo a imutabilidade dos dados.
++
++---
++
++## Exemplo de Uso
++```dart
++final checkpoint = CheckpointData.empty()
++  .updatePersonalAccount(name: 'João', cpf: '123.456.789-00')
++  .moveToStage(CheckpointStage.createBusinessAccount);
++```
++
++---
++
++## Observações
++- O fluxo de estágios é definido na lógica interna e pode ser customizado conforme necessidade.
++- As extensões facilitam o acesso e atualização dos dados sem expor detalhes internos da estrutura.
++
++---
++
++## Referências
++- [checkpoint_enum.dart](../../lib/domain/enums/checkpoint_enum.dart)
++- [checkpoint_section_data.dart](../../lib/domain/entities/checkpoint/checkpoint_section_data.dart)
++- [business_account_values.dart](../../lib/domain/entities/checkpoint/checkpoint_values/business_account_values.dart)
++- [business_partners_values.dart](../../lib/domain/entities/checkpoint/checkpoint_values/business_partners_values.dart)
++- [personal_account_values.dart](../../lib/domain/entities/checkpoint/checkpoint_values/personal_account_values.dart)
+diff --git a/example/multiple_partners_example.dart b/example/multiple_partners_example.dart
+deleted file mode 100644
+index 4b3136e..0000000
+--- a/example/multiple_partners_example.dart
++++ /dev/null
+@@ -1,118 +0,0 @@
+-import '../lib/domain/entities/checkpoint/checkpoint_data.dart';
+-import '../lib/domain/entities/checkpoint/checkpoint_values/business_partners_values.dart';
+-
+-/// Exemplo demonstrando o uso de múltiplos sócios empresariais.
+-void main() {
+-  print('🚀 Demonstração: Múltiplos Sócios Empresariais\n');
+-
+-  // Inicializar checkpoint vazio
+-  var checkpoint = CheckpointData.empty();
+-  print(
+-    '📋 Checkpoint iniciado: ${checkpoint.businessPartnersValues.length} sócios',
+-  );
+-
+-  // Adicionar primeiro sócio
+-  final socio1 = BusinessPartnerData(
+-    companyId: 'EMP001',
+-    fullName: 'João Silva',
+-    email: 'joao.silva@empresa.com',
+-    isPoliticallyExposed: false,
+-    zipCode: '01234-567',
+-    state: 'SP',
+-    city: 'São Paulo',
+-    district: 'Centro',
+-    street: 'Rua das Flores',
+-    number: '123',
+-    complement: 'Sala 45',
+-  );
+-
+-  checkpoint = checkpoint.addBusinessPartner(socio1);
+-  print(
+-    '✅ Primeiro sócio adicionado: ${checkpoint.businessPartnersValues.length} sócios',
+-  );
+-
+-  // Adicionar segundo sócio
+-  final socio2 = BusinessPartnerData(
+-    companyId: 'EMP002',
+-    fullName: 'Maria Santos',
+-    email: 'maria.santos@empresa.com',
+-    isPoliticallyExposed: true,
+-    zipCode: '04567-890',
+-    state: 'RJ',
+-    city: 'Rio de Janeiro',
+-    district: 'Copacabana',
+-    street: 'Av. Atlântica',
+-    number: '1000',
+-  );
+-
+-  checkpoint = checkpoint.addBusinessPartner(socio2);
+-  print(
+-    '✅ Segundo sócio adicionado: ${checkpoint.businessPartnersValues.length} sócios',
+-  );
+-
+-  // Adicionar terceiro sócio
+-  final socio3 = BusinessPartnerData(
+-    fullName: 'Carlos Oliveira',
+-    email: 'carlos.oliveira@empresa.com',
+-    isPoliticallyExposed: false,
+-  );
+-
+-  checkpoint = checkpoint.addBusinessPartner(socio3);
+-  print(
+-    '✅ Terceiro sócio adicionado: ${checkpoint.businessPartnersValues.length} sócios',
+-  );
+-
+-  // Listar todos os sócios
+-  print('\n📋 Lista de Sócios:');
+-  final socios = checkpoint.businessPartnersValues;
+-  for (int i = 0; i < socios.length; i++) {
+-    final socio = socios[i];
+-    print('${i + 1}. ${socio.fullName} (${socio.email})');
+-    print('   PEP: ${socio.isPoliticallyExposed ?? false ? "Sim" : "Não"}');
+-    if (socio.city != null) {
+-      print('   Local: ${socio.city}, ${socio.state}');
+-    }
+-    print('');
+-  }
+-
+-  // Atualizar dados do primeiro sócio
+-  checkpoint = checkpoint.updateBusinessPartnerFields(
+-    0,
+-    email: 'joao.silva.novo@empresa.com',
+-    city: 'Campinas',
+-  );
+-  print('🔄 Dados do primeiro sócio atualizados');
+-
+-  // Verificar alteração
+-  final socioAtualizado = checkpoint.businessPartnersValues[0];
+-  print('   Novo email: ${socioAtualizado.email}');
+-  print('   Nova cidade: ${socioAtualizado.city}');
+-
+-  // Remover o segundo sócio (índice 1)
+-  checkpoint = checkpoint.removeBusinessPartner(1);
+-  print(
+-    '\n❌ Segundo sócio removido: ${checkpoint.businessPartnersValues.length} sócios restantes',
+-  );
+-
+-  // Lista final
+-  print('\n📋 Lista Final de Sócios:');
+-  final sociosFinais = checkpoint.businessPartnersValues;
+-  for (int i = 0; i < sociosFinais.length; i++) {
+-    final socio = sociosFinais[i];
+-    print('${i + 1}. ${socio.fullName} (${socio.email})');
+-  }
+-
+-  // Testar serialização
+-  final json = checkpoint.toJson();
+-  final checkpointFromJson = CheckpointData.fromJson(json);
+-  final sociosDeserializados = checkpointFromJson.businessPartnersValues;
+-
+-  print('\n🔄 Teste de Serialização:');
+-  print('Sócios antes: ${sociosFinais.length}');
+-  print('Sócios depois: ${sociosDeserializados.length}');
+-  print(
+-    'Serialização funcionou: ${sociosFinais.length == sociosDeserializados.length}',
+-  );
+-
+-  print('\n✅ Demonstração concluída com sucesso!');
+-}
+diff --git a/lib/core/extensions/result.dart b/lib/core/extensions/result.dart
+new file mode 100644
+index 0000000..49e6b85
+--- /dev/null
++++ b/lib/core/extensions/result.dart
+@@ -0,0 +1,22 @@
++import 'package:result_dart/result_dart.dart';
++
++/// Executa uma função síncrona e encapsula seu resultado em [Result].
++Result<T> toResult<T extends Object>(T Function() action) {
++  try {
++    return Success(action());
++  } catch (err) {
++    return Failure(Exception(err));
++  }
++}
++
++/// Executa uma função assíncrona e encapsula seu resultado em [AsyncResult].
++Future<Result<T>> toAsyncResult<T extends Object>(
++  Future<T> Function() action,
++) async {
++  try {
++    final value = await action();
++    return Success(value);
++  } catch (err) {
++    return Failure(Exception(err));
++  }
++}
+diff --git a/lib/domain/entities/checkpoint/checkpoint_data.dart b/lib/domain/entities/checkpoint/checkpoint_data.dart
+index 6ce591e..947f0bf 100644
+--- a/lib/domain/entities/checkpoint/checkpoint_data.dart
++++ b/lib/domain/entities/checkpoint/checkpoint_data.dart
+@@ -21,8 +21,6 @@ export 'checkpoint_values/personal_account_values.dart';
+ /// - O estágio atual do processo
+ /// - Status de completude
+ /// - Dados de todas as seções já preenchidas
+-///
+-/// A classe é imutável e utiliza o padrão copy-with para atualizações.
+ class CheckpointData extends Equatable {
+   final CheckpointStage currentStage;
+   final bool isCompleted;
+@@ -93,21 +91,21 @@ class CheckpointData extends Equatable {
+   ///
+   /// Retorna uma nova instância de [CheckpointData] com a seção atualizada
+   /// e possivelmente um novo estágio atual.
+-  CheckpointData withSection({
+-    required CheckpointStage stage,
+-    required CheckpointSectionData sectionData,
+-    // CheckpointStage? nextStage,
+-  }) {
+-    final updatedSections = Map<CheckpointStage, CheckpointSectionData>.from(
+-      sections,
+-    );
+-    updatedSections[stage] = sectionData;
+-
+-    return copyWith(
+-      sections: updatedSections,
+-      currentStage: stage, // nextStage ?? _getNextStage(stage),
+-    );
+-  }
++  // CheckpointData withSection({
++  //   required CheckpointStage stage,
++  //   required CheckpointSectionData sectionData,
++  //   // CheckpointStage? nextStage,
++  // }) {
++  //   final updatedSections = Map<CheckpointStage, CheckpointSectionData>.from(
++  //     sections,
++  //   );
++  //   updatedSections[stage] = sectionData;
++
++  //   return copyWith(
++  //     sections: updatedSections,
++  //     currentStage: stage, // nextStage ?? _getNextStage(stage),
++  //   );
++  // }
+ 
+   /// Determina o próximo estágio baseado no estágio atual.
+   ///
+@@ -238,28 +236,28 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
+     String? rgIssuerStateAbbreviation,
+     DateTime? rgIssueDate,
+   }) {
+-    final currentValues = personalAccountValues;
+-    if (currentValues == null) return this;
+-
+-    final updatedValues = currentValues.copyWith(
+-      name: name,
+-      cpf: cpf,
+-      email: email,
+-      phone: phone,
+-      password: password,
+-      passwordConfirmation: passwordConfirmation,
+-      rgNumber: rgNumber,
+-      rgIssuer: rgIssuer,
+-      rgIssuerStateId: rgIssuerStateId,
+-      rgIssuerStateAbbreviation: rgIssuerStateAbbreviation,
+-      rgIssueDate: rgIssueDate,
++    final values = personalAccountValues ?? PersonalAccountValues();
++    sections[CheckpointStage.createPersonalAccount] = CheckpointSection(
++      values: values,
+     );
+ 
+-    return withSection(
+-      stage: CheckpointStage.createPersonalAccount,
+-      sectionData: CheckpointSection(values: updatedValues),
+-      // nextStage: currentStage, // Mantém o estágio atual
+-    );
++    if (name != null) values.name = name;
++    if (cpf != null) values.cpf = cpf;
++    if (email != null) values.email = email;
++    if (phone != null) values.phone = phone;
++    if (password != null) values.password = password;
++    if (passwordConfirmation != null) {
++      values.passwordConfirmation = passwordConfirmation;
++    }
++    if (rgNumber != null) values.rgNumber = rgNumber;
++    if (rgIssuer != null) values.rgIssuer = rgIssuer;
++    if (rgIssuerStateId != null) values.rgIssuerStateId = rgIssuerStateId;
++    if (rgIssuerStateAbbreviation != null) {
++      values.rgIssuerStateAbbreviation = rgIssuerStateAbbreviation;
++    }
++    if (rgIssueDate != null) values.rgIssueDate = rgIssueDate;
++
++    return this;
+   }
+ 
+   /// Atualiza campos específicos da conta empresarial.
+@@ -273,7 +271,10 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
+     String? municipalRegistration,
+     String? legalName,
+     String? tradeName,
++    DateTime? openingDate,
+     String? phone,
++    String? email,
++    String? averageMonthlyRevenue,
+     String? revenueOptionId,
+     String? zipCode,
+     String? state,
+@@ -283,36 +284,35 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
+     String? number,
+     String? complement,
+     DateTime? addressStartDate,
+-    String? email,
+-    String? openingDate,
+   }) {
+-    final currentValues = businessAccountValues;
+-    if (currentValues == null) return this;
+-
+-    final updatedValues = currentValues.copyWith(
+-      cnpj: cnpj,
+-      municipalRegistration: municipalRegistration,
+-      legalName: legalName,
+-      tradeName: tradeName,
+-      phone: phone,
+-      revenueOptionId: revenueOptionId,
+-      zipCode: zipCode,
+-      state: state,
+-      city: city,
+-      neighborhood: neighborhood,
+-      streetAddress: streetAddress,
+-      number: number,
+-      complement: complement,
+-      addressStartDate: addressStartDate,
+-      email: email,
+-      openingDate: openingDate,
++    final values = businessAccountValues ?? BusinessAccountValues();
++    sections[CheckpointStage.createBusinessAccount] = CheckpointSection(
++      values: values,
+     );
+ 
+-    return withSection(
+-      stage: CheckpointStage.createBusinessAccount,
+-      sectionData: CheckpointSection(values: updatedValues),
+-      // nextStage: currentStage, // Mantém o estágio atual
+-    );
++    if (cnpj != null) values.cnpj = cnpj;
++    if (municipalRegistration != null) {
++      values.municipalRegistration = municipalRegistration;
++    }
++    if (legalName != null) values.legalName = legalName;
++    if (tradeName != null) values.tradeName = tradeName;
++    if (openingDate != null) values.openingDate = openingDate;
++    if (phone != null) values.phone = phone;
++    if (email != null) values.email = email;
++    if (averageMonthlyRevenue != null) {
++      values.averageMonthlyRevenue = averageMonthlyRevenue;
++    }
++    if (revenueOptionId != null) values.revenueOptionId = revenueOptionId;
++    if (zipCode != null) values.zipCode = zipCode;
++    if (state != null) values.state = state;
++    if (city != null) values.city = city;
++    if (neighborhood != null) values.neighborhood = neighborhood;
++    if (streetAddress != null) values.streetAddress = streetAddress;
++    if (number != null) values.number = number;
++    if (complement != null) values.complement = complement;
++    if (addressStartDate != null) values.addressStartDate = addressStartDate;
++
++    return this;
+   }
+ 
+   /// Adiciona um novo sócio empresarial.
+@@ -322,15 +322,14 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
+   /// Retorna uma nova instância com o sócio adicionado.
+   CheckpointData addBusinessPartner(BusinessPartnerData partner) {
+     final currentCollection =
+-        businessPartnersCollection ?? const BusinessPartnersValues();
++        businessPartnersCollection ?? BusinessPartnersValues();
+ 
+     final updatedCollection = currentCollection.addPartner(partner);
+-
+-    return withSection(
+-      stage: CheckpointStage.registerBusinessPartners,
+-      sectionData: CheckpointSection(values: updatedCollection),
+-      // nextStage: currentStage, // Mantém no mesmo estágio para adicionar mais
++    sections[CheckpointStage.registerBusinessPartners] = CheckpointSection(
++      values: updatedCollection,
+     );
++
++    return this;
+   }
+ 
+   /// Remove um sócio empresarial pelo índice.
+@@ -338,18 +337,18 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
+   /// [index] - Índice do sócio a ser removido
+   ///
+   /// Retorna uma nova instância sem o sócio removido.
+-  /// Se o índice for inválido ou não existir coleção, retorna a instância atual.
++  /// Se o índice for inválido ou não existir coleção, retorna a instância
++  /// atual.
+   CheckpointData removeBusinessPartner(int index) {
+     final currentCollection = businessPartnersCollection;
+     if (currentCollection == null) return this;
+ 
+     final updatedCollection = currentCollection.removePartner(index);
+-
+-    return withSection(
+-      stage: CheckpointStage.registerBusinessPartners,
+-      sectionData: CheckpointSection(values: updatedCollection),
+-      // nextStage: currentStage,
++    sections[CheckpointStage.registerBusinessPartners] = CheckpointSection(
++      values: updatedCollection,
+     );
++
++    return this;
+   }
+ 
+   /// Atualiza um sócio específico.
+@@ -358,18 +357,18 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
+   /// [partner] - Novos dados do sócio
+   ///
+   /// Retorna uma nova instância com o sócio atualizado.
+-  /// Se o índice for inválido ou não existir coleção, retorna a instância atual.
++  /// Se o índice for inválido ou não existir coleção, retorna a instância
++  /// atual.
+   CheckpointData updateBusinessPartner(int index, BusinessPartnerData partner) {
+     final currentCollection = businessPartnersCollection;
+     if (currentCollection == null) return this;
+ 
+     final updatedCollection = currentCollection.updatePartner(index, partner);
+-
+-    return withSection(
+-      stage: CheckpointStage.registerBusinessPartners,
+-      sectionData: CheckpointSection(values: updatedCollection),
+-      // nextStage: currentStage,
++    sections[CheckpointStage.registerBusinessPartners] = CheckpointSection(
++      values: updatedCollection,
+     );
++
++    return this;
+   }
+ 
+   /// Atualiza campos específicos de um sócio empresarial.
+@@ -377,7 +376,8 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
+   /// [index] - Índice do sócio a ser atualizado
+   /// Apenas os campos fornecidos serão atualizados, os demais permanecerão
+   /// inalterados.
+-  /// Se não existir coleção ou o índice for inválido, retorna a instância atual.
++  /// Se não existir coleção ou o índice for inválido, retorna a instância
++  /// atual.
+   CheckpointData updateBusinessPartnerFields(
+     int index, {
+     String? companyId,
+@@ -395,20 +395,21 @@ extension CheckpointDataUpdateExtensions on CheckpointData {
+     final partners = businessPartnersValues;
+     if (index < 0 || index >= partners.length) return this;
+ 
+-    final updatedPartner = partners[index].copyWith(
+-      companyId: companyId,
+-      fullName: fullName,
+-      email: email,
+-      isPoliticallyExposed: isPoliticallyExposed,
+-      zipCode: zipCode,
+-      state: state,
+-      city: city,
+-      district: district,
+-      street: street,
+-      number: number,
+-      complement: complement,
+-    );
+-
+-    return updateBusinessPartner(index, updatedPartner);
++    final values = partners[index];
++    if (companyId != null) values.companyId = companyId;
++    if (fullName != null) values.fullName = fullName;
++    if (email != null) values.email = email;
++    if (isPoliticallyExposed != null) {
++      values.isPoliticallyExposed = isPoliticallyExposed;
++    }
++    if (zipCode != null) values.zipCode = zipCode;
++    if (state != null) values.state = state;
++    if (city != null) values.city = city;
++    if (district != null) values.district = district;
++    if (street != null) values.street = street;
++    if (number != null) values.number = number;
++    if (complement != null) values.complement = complement;
++
++    return this;
+   }
+ }
+diff --git a/lib/domain/entities/checkpoint/checkpoint_values/base_checkpoint_values.dart b/lib/domain/entities/checkpoint/checkpoint_values/base_checkpoint_values.dart
+index 3d14e53..3857890 100644
+--- a/lib/domain/entities/checkpoint/checkpoint_values/base_checkpoint_values.dart
++++ b/lib/domain/entities/checkpoint/checkpoint_values/base_checkpoint_values.dart
+@@ -1,5 +1,3 @@
+-import 'package:equatable/equatable.dart';
+-
+ import '/domain/enums/checkpoint_enum.dart';
+ import 'business_account_values.dart';
+ import 'business_partners_values.dart';
+@@ -10,12 +8,31 @@ export 'business_account_values.dart';
+ export 'business_partners_values.dart';
+ export 'personal_account_values.dart';
+ 
+-abstract class BaseCheckpointValues extends Equatable {
+-  const BaseCheckpointValues();
++abstract class BaseCheckpointValues {
++  BaseCheckpointValues();
+ 
+   CheckpointStage get stage;
+ 
++  /// Campos alterados (nomes de chave da API).
++  final Set<String> dirtyFields = {};
++
++  /// Marca um campo como alterado.
++  void markDirty(String field) => dirtyFields.add(field);
++
++  /// Limpa o estado de alterações (após sincronização).
++  void markClean() => dirtyFields.clear();
++
++  /// Verifica se há alterações pendentes.
++  bool get isDirty => dirtyFields.isNotEmpty;
++
++  /// Retorna o mapa completo (implementado pela subclasse).
+   Map<String, dynamic> toMap();
++
++  /// Retorna apenas os campos modificados.
++  Map<String, dynamic> toDirtyMap() {
++    final full = toMap();
++    return {for (final key in dirtyFields) key: full[key]};
++  }
+ }
+ 
+ extension BaseCheckpointValuesStage on BaseCheckpointValues {
+diff --git a/lib/domain/entities/checkpoint/checkpoint_values/business_account_values.dart b/lib/domain/entities/checkpoint/checkpoint_values/business_account_values.dart
+index 99e8c37..14b457f 100644
+--- a/lib/domain/entities/checkpoint/checkpoint_values/business_account_values.dart
++++ b/lib/domain/entities/checkpoint/checkpoint_values/business_account_values.dart
+@@ -1,112 +1,212 @@
+ import 'base_checkpoint_values.dart';
+ 
+ class BusinessAccountValues extends BaseCheckpointValues {
+-  final String cnpj;
+-  final String municipalRegistration;
+-  final String legalName;
+-  final String tradeName;
+-  final String phone;
+-  final String revenueOptionId;
+-  final String zipCode;
+-  final String state;
+-  final String city;
+-  final String neighborhood;
+-  final String streetAddress;
+-  final String number;
+-  final String complement;
+-  final DateTime addressStartDate;
+-  final String email;
+-  final String openingDate;
+-
+-  const BusinessAccountValues({
+-    required this.cnpj,
+-    required this.municipalRegistration,
+-    required this.legalName,
+-    required this.tradeName,
+-    required this.phone,
+-    required this.revenueOptionId,
+-    required this.zipCode,
+-    required this.state,
+-    required this.city,
+-    required this.neighborhood,
+-    required this.streetAddress,
+-    required this.number,
+-    required this.complement,
+-    required this.addressStartDate,
+-    required this.email,
+-    required this.openingDate,
+-  });
++  String _cnpj;
++  String _municipalRegistration;
++  String _legalName;
++  String _tradeName;
++  DateTime _openingDate;
++  String _phone;
++  String _email;
++  String _averageMonthlyRevenue;
++  String _revenueOptionId;
++  String _zipCode;
++  String _state;
++  String _city;
++  String _neighborhood;
++  String _streetAddress;
++  String _number;
++  String _complement;
++  DateTime _addressStartDate;
++
++  String get cnpj => _cnpj;
++  String get municipalRegistration => _municipalRegistration;
++  String get legalName => _legalName;
++  String get tradeName => _tradeName;
++  DateTime get openingDate => _openingDate;
++  String get phone => _phone;
++  String get email => _email;
++  String get averageMonthlyRevenue => _averageMonthlyRevenue;
++  String get revenueOptionId => _revenueOptionId;
++  String get zipCode => _zipCode;
++  String get state => _state;
++  String get city => _city;
++  String get neighborhood => _neighborhood;
++  String get streetAddress => _streetAddress;
++  String get number => _number;
++  String get complement => _complement;
++  DateTime get addressStartDate => _addressStartDate;
+ 
+   @override
+   CheckpointStage get stage => CheckpointStage.createBusinessAccount;
+ 
+-  factory BusinessAccountValues.empty() {
+-    return BusinessAccountValues(
+-      cnpj: '',
+-      municipalRegistration: '',
+-      legalName: '',
+-      tradeName: '',
+-      phone: '',
+-      revenueOptionId: '',
+-      zipCode: '',
+-      state: '',
+-      city: '',
+-      neighborhood: '',
+-      streetAddress: '',
+-      number: '',
+-      complement: '',
+-      addressStartDate: DateTime.now(),
+-      email: '',
+-      openingDate: '',
+-    );
++  set cnpj(String value) {
++    if (_cnpj != value) {
++      _cnpj = value;
++      markDirty('cnpj');
++    }
+   }
+ 
+-  BusinessAccountValues copyWith({
+-    String? cnpj,
+-    String? municipalRegistration,
+-    String? legalName,
+-    String? tradeName,
+-    String? phone,
+-    String? revenueOptionId,
+-    String? zipCode,
+-    String? state,
+-    String? city,
+-    String? neighborhood,
+-    String? streetAddress,
+-    String? number,
+-    String? complement,
+-    DateTime? addressStartDate,
+-    String? email,
+-    String? openingDate,
+-  }) {
+-    return BusinessAccountValues(
+-      cnpj: cnpj ?? this.cnpj,
+-      municipalRegistration:
+-          municipalRegistration ?? this.municipalRegistration,
+-      legalName: legalName ?? this.legalName,
+-      tradeName: tradeName ?? this.tradeName,
+-      phone: phone ?? this.phone,
+-      revenueOptionId: revenueOptionId ?? this.revenueOptionId,
+-      zipCode: zipCode ?? this.zipCode,
+-      state: state ?? this.state,
+-      city: city ?? this.city,
+-      neighborhood: neighborhood ?? this.neighborhood,
+-      streetAddress: streetAddress ?? this.streetAddress,
+-      number: number ?? this.number,
+-      complement: complement ?? this.complement,
+-      addressStartDate: addressStartDate ?? this.addressStartDate,
+-      email: email ?? this.email,
+-      openingDate: openingDate ?? this.openingDate,
+-    );
++  set municipalRegistration(String value) {
++    if (_municipalRegistration != value) {
++      _municipalRegistration = value;
++      markDirty('municipal_registration');
++    }
++  }
++
++  set legalName(String value) {
++    if (_legalName != value) {
++      _legalName = value;
++      markDirty('legal_name');
++    }
++  }
++
++  set tradeName(String value) {
++    if (_tradeName != value) {
++      _tradeName = value;
++      markDirty('trade_name');
++    }
++  }
++
++  set openingDate(DateTime value) {
++    if (_openingDate != value) {
++      _openingDate = value;
++      markDirty('opening_date');
++    }
++  }
++
++  set phone(String value) {
++    if (_phone != value) {
++      _phone = value;
++      markDirty('phone');
++    }
+   }
+ 
++  set email(String value) {
++    if (_email != value) {
++      _email = value;
++      markDirty('email');
++    }
++  }
++
++  set averageMonthlyRevenue(String value) {
++    if (_averageMonthlyRevenue != value) {
++      _averageMonthlyRevenue = value;
++      markDirty('average_monthly_revenue');
++    }
++  }
++
++  set revenueOptionId(String value) {
++    if (_revenueOptionId != value) {
++      _revenueOptionId = value;
++      markDirty('revenue_option_id');
++    }
++  }
++
++  set zipCode(String value) {
++    if (_zipCode != value) {
++      _zipCode = value;
++      markDirty('zip_code');
++    }
++  }
++
++  set state(String value) {
++    if (_state != value) {
++      _state = value;
++      markDirty('state');
++    }
++  }
++
++  set city(String value) {
++    if (_city != value) {
++      _city = value;
++      markDirty('city');
++    }
++  }
++
++  set neighborhood(String value) {
++    if (_neighborhood != value) {
++      _neighborhood = value;
++      markDirty('neighborhood');
++    }
++  }
++
++  set streetAddress(String value) {
++    if (_streetAddress != value) {
++      _streetAddress = value;
++      markDirty('street_address');
++    }
++  }
++
++  set number(String value) {
++    if (_number != value) {
++      _number = value;
++      markDirty('number');
++    }
++  }
++
++  set complement(String value) {
++    if (_complement != value) {
++      _complement = value;
++      markDirty('complement');
++    }
++  }
++
++  set addressStartDate(DateTime value) {
++    if (_addressStartDate != value) {
++      _addressStartDate = value;
++      markDirty('address_start_date');
++    }
++  }
++
++  BusinessAccountValues({
++    String cnpj = '',
++    String municipalRegistration = '',
++    String legalName = '',
++    String tradeName = '',
++    DateTime? openingDate,
++    String phone = '',
++    String email = '',
++    String averageMonthlyRevenue = '',
++    String revenueOptionId = '',
++    String zipCode = '',
++    String state = '',
++    String city = '',
++    String neighborhood = '',
++    String streetAddress = '',
++    String number = '',
++    String complement = '',
++    DateTime? addressStartDate,
++  }) : _cnpj = cnpj,
++       _municipalRegistration = municipalRegistration,
++       _legalName = legalName,
++       _tradeName = tradeName,
++       _openingDate = openingDate ?? DateTime.now(),
++       _phone = phone,
++       _email = email,
++       _averageMonthlyRevenue = averageMonthlyRevenue,
++       _revenueOptionId = revenueOptionId,
++       _zipCode = zipCode,
++       _state = state,
++       _city = city,
++       _neighborhood = neighborhood,
++       _streetAddress = streetAddress,
++       _number = number,
++       _complement = complement,
++       _addressStartDate = addressStartDate ?? DateTime.now();
++
++  factory BusinessAccountValues.empty() => BusinessAccountValues();
++
+   factory BusinessAccountValues.fromMap(Map<String, dynamic> map) {
+-    return BusinessAccountValues(
++    final instance = BusinessAccountValues(
+       cnpj: map['cnpj'] ?? '',
+       municipalRegistration: map['municipal_registration'] ?? '',
+       legalName: map['legal_name'] ?? '',
+       tradeName: map['trade_name'] ?? '',
++      openingDate: DateTime.tryParse(map['opening_date']) ?? DateTime.now(),
+       phone: map['phone'] ?? '',
++      email: map['email'] ?? '',
++      averageMonthlyRevenue: map['average_monthly_revenue'] ?? '',
+       revenueOptionId: map['revenue_option_id'] ?? '',
+       zipCode: map['zip_code'] ?? '',
+       state: map['state'] ?? '',
+@@ -115,10 +215,16 @@ class BusinessAccountValues extends BaseCheckpointValues {
+       streetAddress: map['street_address'] ?? '',
+       number: map['number'] ?? '',
+       complement: map['complement'] ?? '',
+-      addressStartDate: DateTime.parse(map['address_start_date'] ?? ''),
+-      email: map['email'] ?? '',
+-      openingDate: map['opening_date'] ?? '',
++      addressStartDate:
++          DateTime.tryParse(map['address_start_date']) ?? DateTime.now(),
+     );
++
++    final dirty = map['dirty_fields'];
++    if (dirty is List) {
++      instance.dirtyFields.addAll(dirty.map((e) => e.toString()));
++    }
++
++    return instance;
+   }
+ 
+   @override
+@@ -128,7 +234,10 @@ class BusinessAccountValues extends BaseCheckpointValues {
+       'municipal_registration': municipalRegistration,
+       'legal_name': legalName,
+       'trade_name': tradeName,
++      'opening_date': openingDate.toIso8601String(),
+       'phone': phone,
++      'email': email,
++      'average_monthly_revenue': averageMonthlyRevenue,
+       'revenue_option_id': revenueOptionId,
+       'zip_code': zipCode,
+       'state': state,
+@@ -138,28 +247,7 @@ class BusinessAccountValues extends BaseCheckpointValues {
+       'number': number,
+       'complement': complement,
+       'address_start_date': addressStartDate.toIso8601String(),
+-      'email': email,
+-      'opening_date': openingDate,
++      'dirty_fields': dirtyFields.toList(),
+     };
+   }
+-
+-  @override
+-  List<Object?> get props => [
+-    cnpj,
+-    municipalRegistration,
+-    legalName,
+-    tradeName,
+-    phone,
+-    revenueOptionId,
+-    zipCode,
+-    state,
+-    city,
+-    neighborhood,
+-    streetAddress,
+-    number,
+-    complement,
+-    addressStartDate,
+-    email,
+-    openingDate,
+-  ];
+ }
+diff --git a/lib/domain/entities/checkpoint/checkpoint_values/business_partners_values.dart b/lib/domain/entities/checkpoint/checkpoint_values/business_partners_values.dart
+index 9f2c504..ea618df 100644
+--- a/lib/domain/entities/checkpoint/checkpoint_values/business_partners_values.dart
++++ b/lib/domain/entities/checkpoint/checkpoint_values/business_partners_values.dart
+@@ -1,81 +1,140 @@
+-import 'package:equatable/equatable.dart';
+-
+ import 'base_checkpoint_values.dart';
+ 
+ /// Dados de um sócio empresarial individual.
+-class BusinessPartnerData extends Equatable {
+-  final String? companyId;
+-  final String? fullName;
+-  final String? email;
+-  final bool? isPoliticallyExposed;
+-  final String? zipCode;
+-  final String? state;
+-  final String? city;
+-  final String? district;
+-  final String? street;
+-  final String? number;
+-  final String? complement;
+-
+-  const BusinessPartnerData({
+-    this.companyId,
+-    this.fullName,
+-    this.email,
+-    this.isPoliticallyExposed,
+-    this.zipCode,
+-    this.state,
+-    this.city,
+-    this.district,
+-    this.street,
+-    this.number,
+-    this.complement,
+-  });
+-
+-  factory BusinessPartnerData.empty() {
+-    return const BusinessPartnerData(
+-      companyId: '',
+-      fullName: '',
+-      email: '',
+-      isPoliticallyExposed: false,
+-      zipCode: '',
+-      state: '',
+-      city: '',
+-      district: '',
+-      street: '',
+-      number: '',
+-      complement: null,
+-    );
++class BusinessPartnerData extends BaseCheckpointValues {
++  String _companyId;
++  String _fullName;
++  String _email;
++  bool _isPoliticallyExposed;
++  String _zipCode;
++  String _state;
++  String _city;
++  String _district;
++  String _street;
++  String _number;
++  String? _complement;
++
++  String get companyId => _companyId;
++  String get fullName => _fullName;
++  String get email => _email;
++  bool get isPoliticallyExposed => _isPoliticallyExposed;
++  String get zipCode => _zipCode;
++  String get state => _state;
++  String get city => _city;
++  String get district => _district;
++  String get street => _street;
++  String get number => _number;
++  String? get complement => _complement;
++
++  @override
++  CheckpointStage get stage => CheckpointStage.registerBusinessPartners;
++
++  set companyId(String value) {
++    if (_companyId != value) {
++      _companyId = value;
++      markDirty('company_id');
++    }
+   }
+ 
+-  BusinessPartnerData copyWith({
+-    String? companyId,
+-    String? fullName,
+-    String? email,
+-    bool? isPoliticallyExposed,
+-    String? zipCode,
+-    String? state,
+-    String? city,
+-    String? district,
+-    String? street,
+-    String? number,
+-    String? complement,
+-  }) {
+-    return BusinessPartnerData(
+-      companyId: companyId ?? this.companyId,
+-      fullName: fullName ?? this.fullName,
+-      email: email ?? this.email,
+-      isPoliticallyExposed: isPoliticallyExposed ?? this.isPoliticallyExposed,
+-      zipCode: zipCode ?? this.zipCode,
+-      state: state ?? this.state,
+-      city: city ?? this.city,
+-      district: district ?? this.district,
+-      street: street ?? this.street,
+-      number: number ?? this.number,
+-      complement: complement ?? this.complement,
+-    );
++  set fullName(String value) {
++    if (_fullName != value) {
++      _fullName = value;
++      markDirty('full_name');
++    }
++  }
++
++  set email(String value) {
++    if (_email != value) {
++      _email = value;
++      markDirty('email');
++    }
++  }
++
++  set isPoliticallyExposed(bool value) {
++    if (_isPoliticallyExposed != value) {
++      _isPoliticallyExposed = value;
++      markDirty('is_politically_exposed');
++    }
++  }
++
++  set zipCode(String value) {
++    if (_zipCode != value) {
++      _zipCode = value;
++      markDirty('zip_code');
++    }
++  }
++
++  set state(String value) {
++    if (_state != value) {
++      _state = value;
++      markDirty('state');
++    }
++  }
++
++  set city(String value) {
++    if (_city != value) {
++      _city = value;
++      markDirty('city');
++    }
++  }
++
++  set district(String value) {
++    if (_district != value) {
++      _district = value;
++      markDirty('district');
++    }
++  }
++
++  set street(String value) {
++    if (_street != value) {
++      _street = value;
++      markDirty('street');
++    }
++  }
++
++  set number(String value) {
++    if (_number != value) {
++      _number = value;
++      markDirty('number');
++    }
+   }
+ 
++  set complement(String? value) {
++    if (_complement != value) {
++      _complement = value;
++      markDirty('complement');
++    }
++  }
++
++  BusinessPartnerData({
++    String companyId = '',
++    String fullName = '',
++    String email = '',
++    bool isPoliticallyExposed = false,
++    String zipCode = '',
++    String state = '',
++    String city = '',
++    String district = '',
++    String street = '',
++    String number = '',
++    String? complement,
++  }) : _companyId = companyId,
++       _fullName = fullName,
++       _email = email,
++       _isPoliticallyExposed = isPoliticallyExposed,
++       _zipCode = zipCode,
++       _state = state,
++       _city = city,
++       _district = district,
++       _street = street,
++       _number = number,
++       _complement = complement;
++
++  factory BusinessPartnerData.empty() => BusinessPartnerData();
++
++  /// Reconstrói a lista de sócios e restaura os campos marcados como sujos.
+   factory BusinessPartnerData.fromMap(Map<String, dynamic> map) {
+-    return BusinessPartnerData(
++    final instance = BusinessPartnerData(
+       companyId: map['company_id'] ?? '',
+       fullName: map['full_name'] ?? '',
+       email: map['email'] ?? '',
+@@ -86,10 +145,18 @@ class BusinessPartnerData extends Equatable {
+       district: map['district'] ?? '',
+       street: map['street'] ?? '',
+       number: map['number'] ?? '',
+-      complement: map['complement'],
++      complement: map['complement'] ?? '',
+     );
++
++    final dirty = map['dirty_fields'];
++    if (dirty is List) {
++      instance.dirtyFields.addAll(dirty.map((e) => e.toString()));
++    }
++
++    return instance;
+   }
+ 
++  @override
+   Map<String, dynamic> toMap() {
+     return {
+       'company_id': companyId,
+@@ -103,23 +170,9 @@ class BusinessPartnerData extends Equatable {
+       'street': street,
+       'number': number,
+       'complement': complement,
++      'dirty_fields': dirtyFields.toList(),
+     };
+   }
+-
+-  @override
+-  List<Object?> get props => [
+-    companyId,
+-    fullName,
+-    email,
+-    isPoliticallyExposed,
+-    zipCode,
+-    state,
+-    city,
+-    district,
+-    street,
+-    number,
+-    complement,
+-  ];
+ }
+ 
+ /// Coleção que gerencia múltiplos sócios empresariais.
+@@ -131,67 +184,61 @@ class BusinessPartnersValues extends BaseCheckpointValues {
+   /// Lista de todos os sócios empresariais cadastrados.
+   final List<BusinessPartnerData> partners;
+ 
+-  const BusinessPartnersValues({
+-    this.partners = const [],
+-  });
++  BusinessPartnersValues({this.partners = const []});
+ 
+   @override
+   CheckpointStage get stage => CheckpointStage.registerBusinessPartners;
+ 
+   /// Adiciona um novo sócio à coleção.
+   ///
+-  /// [partner] - Dados do novo sócio a ser adicionado
+-  ///
+-  /// Retorna uma nova instância com o sócio adicionado.
++  /// Retorna uma nova instância com o sócio adicionado e marca a lista como alterada.
+   BusinessPartnersValues addPartner(BusinessPartnerData partner) {
+-    return copyWith(partners: [...partners, partner]);
++    final updated = [...partners, partner];
++    final next = copyWith(partners: updated);
++    next.markDirty('partners');
++    return next;
+   }
+ 
+   /// Remove um sócio da coleção pelo índice.
+   ///
+-  /// [index] - Índice do sócio a ser removido
+-  ///
+-  /// Retorna uma nova instância sem o sócio removido.
+-  /// Se o índice for inválido, retorna a instância atual inalterada.
++  /// Retorna uma nova instância sem o sócio removido e marca como alterada.
+   BusinessPartnersValues removePartner(int index) {
+     if (index < 0 || index >= partners.length) return this;
+-    final updatedPartners = List<BusinessPartnerData>.from(partners);
+-    updatedPartners.removeAt(index);
+-    return copyWith(partners: updatedPartners);
++    final updated = List<BusinessPartnerData>.from(partners)..removeAt(index);
++    final next = copyWith(partners: updated);
++    next.markDirty('partners');
++    return next;
+   }
+ 
+   /// Atualiza um sócio específico na coleção.
+   ///
+-  /// [index] - Índice do sócio a ser atualizado
+-  /// [partner] - Novos dados do sócio
+-  ///
+-  /// Retorna uma nova instância com o sócio atualizado.
+-  /// Se o índice for inválido, retorna a instância atual inalterada.
++  /// Retorna uma nova instância com o sócio atualizado e marca a lista como alterada.
+   BusinessPartnersValues updatePartner(int index, BusinessPartnerData partner) {
+     if (index < 0 || index >= partners.length) return this;
+-    final updatedPartners = List<BusinessPartnerData>.from(partners);
+-    updatedPartners[index] = partner;
+-    return copyWith(partners: updatedPartners);
++    final updated = List<BusinessPartnerData>.from(partners);
++    updated[index] = partner;
++    final next = copyWith(partners: updated);
++    next.markDirty('partners');
++    return next;
+   }
+ 
+   /// Cria uma cópia da instância com os valores especificados alterados.
+   ///
+-  /// Implementa o padrão copy-with para imutabilidade.
++  /// Mantém o rastreamento de campos alterados.
+   BusinessPartnersValues copyWith({
+     List<BusinessPartnerData>? partners,
++    Set<String>? dirtyFields,
+   }) {
+-    return BusinessPartnersValues(
++    final copy = BusinessPartnersValues(
+       partners: partners ?? this.partners,
+     );
++    if (dirtyFields != null) copy.dirtyFields.addAll(dirtyFields);
++    return copy;
+   }
+ 
+-  factory BusinessPartnersValues.empty() {
+-    return BusinessPartnersValues(partners: [BusinessPartnerData.empty()]);
+-  }
++  factory BusinessPartnersValues.empty() =>
++      BusinessPartnersValues(partners: [BusinessPartnerData.empty()]);
+ 
+-  /// Factory constructor que cria uma instância a partir de um mapa.
+-  ///
+-  /// [map] - Mapa contendo os dados serializados da coleção de sócios
+   factory BusinessPartnersValues.fromMap(Map<String, dynamic> map) {
+     final partnersData = map['partners'] as List<dynamic>? ?? [];
+     final partners = partnersData
+@@ -200,16 +247,40 @@ class BusinessPartnersValues extends BaseCheckpointValues {
+         )
+         .toList();
+ 
+-    return BusinessPartnersValues(partners: partners);
++    final instance = BusinessPartnersValues(partners: partners);
++    if (map['dirty_fields'] != null) {
++      instance.dirtyFields.addAll(List<String>.from(map['dirty_fields']));
++    }
++    return instance;
+   }
+ 
+   @override
+-  Map<String, dynamic> toMap() {
+-    return {
+-      'partners': partners.map((partner) => partner.toMap()).toList(),
+-    };
+-  }
++  Map<String, dynamic> toMap() => {
++    'partners': partners.map((p) => p.toMap()).toList(),
++    'dirty_fields': dirtyFields.toList(),
++  };
+ 
++  /// Retorna apenas as alterações relevantes para sincronização incremental
++  /// com a API.
+   @override
+-  List<Object?> get props => [partners];
++  Map<String, dynamic> toDirtyMap() {
++    final changedPartners = partners
++        .where((p) => p.isDirty)
++        .map((p) => p.toDirtyMap())
++        .toList();
++
++    final result = <String, dynamic>{};
++
++    if (dirtyFields.contains('partners')) {
++      result['partners'] = partners.map((p) => p.toMap()).toList();
++    } else if (changedPartners.isNotEmpty) {
++      result['partners'] = changedPartners;
++    }
++
++    if (dirtyFields.isNotEmpty) {
++      result['dirty_fields'] = dirtyFields.toList();
++    }
++
++    return result;
++  }
+ }
+diff --git a/lib/domain/entities/checkpoint/checkpoint_values/personal_account_values.dart b/lib/domain/entities/checkpoint/checkpoint_values/personal_account_values.dart
+index 125de75..0c6906a 100644
+--- a/lib/domain/entities/checkpoint/checkpoint_values/personal_account_values.dart
++++ b/lib/domain/entities/checkpoint/checkpoint_values/personal_account_values.dart
+@@ -1,82 +1,138 @@
+ import 'base_checkpoint_values.dart';
+ 
+ class PersonalAccountValues extends BaseCheckpointValues {
+-  final String name;
+-  final String cpf;
+-  final String email;
+-  final String phone;
+-  final String password;
+-  final String passwordConfirmation;
+-  final String rgNumber;
+-  final String rgIssuer;
+-  final String rgIssuerStateId;
+-  final String rgIssuerStateAbbreviation;
+-  final DateTime rgIssueDate;
+-
+-  const PersonalAccountValues({
+-    required this.name,
+-    required this.cpf,
+-    required this.email,
+-    required this.phone,
+-    required this.password,
+-    required this.passwordConfirmation,
+-    required this.rgNumber,
+-    required this.rgIssuer,
+-    required this.rgIssuerStateId,
+-    required this.rgIssueDate,
+-    required this.rgIssuerStateAbbreviation,
+-  });
++  String _name = '';
++  String _cpf = '';
++  String _email = '';
++  String _phone = '';
++  String _password = '';
++  String _passwordConfirmation = '';
++  String _rgNumber = '';
++  String _rgIssuer = '';
++  String _rgIssuerStateId = '';
++  String _rgIssuerStateAbbreviation = '';
++  DateTime _rgIssueDate = DateTime.now();
++
++  String get name => _name;
++  String get cpf => _cpf;
++  String get email => _email;
++  String get phone => _phone;
++  String get password => _password;
++  String get passwordConfirmation => _passwordConfirmation;
++  String get rgNumber => _rgNumber;
++  String get rgIssuer => _rgIssuer;
++  String get rgIssuerStateId => _rgIssuerStateId;
++  String get rgIssuerStateAbbreviation => _rgIssuerStateAbbreviation;
++  DateTime get rgIssueDate => _rgIssueDate;
+ 
+   @override
+   CheckpointStage get stage => CheckpointStage.createPersonalAccount;
+ 
+-  factory PersonalAccountValues.empty() {
+-    return PersonalAccountValues(
+-      name: '',
+-      cpf: '',
+-      email: '',
+-      phone: '',
+-      password: '',
+-      passwordConfirmation: '',
+-      rgNumber: '',
+-      rgIssuer: '',
+-      rgIssuerStateId: '',
+-      rgIssuerStateAbbreviation: '',
+-      rgIssueDate: DateTime.now(),
+-    );
++  set name(String value) {
++    if (_name != value) {
++      _name = value;
++      markDirty('name');
++    }
+   }
+ 
+-  PersonalAccountValues copyWith({
+-    String? name,
+-    String? cpf,
+-    String? email,
+-    String? phone,
+-    String? password,
+-    String? passwordConfirmation,
+-    String? rgNumber,
+-    String? rgIssuer,
+-    String? rgIssuerStateId,
+-    String? rgIssuerStateAbbreviation,
+-    DateTime? rgIssueDate,
+-  }) {
+-    return PersonalAccountValues(
+-      name: name ?? this.name,
+-      cpf: cpf ?? this.cpf,
+-      email: email ?? this.email,
+-      phone: phone ?? this.phone,
+-      password: password ?? this.password,
+-      passwordConfirmation: passwordConfirmation ?? this.passwordConfirmation,
+-      rgNumber: rgNumber ?? this.rgNumber,
+-      rgIssuer: rgIssuer ?? this.rgIssuer,
+-      rgIssuerStateId: rgIssuerStateId ?? this.rgIssuerStateId,
+-      rgIssuerStateAbbreviation:
+-          rgIssuerStateAbbreviation ?? this.rgIssuerStateAbbreviation,
+-      rgIssueDate: rgIssueDate ?? this.rgIssueDate,
+-    );
++  set cpf(String value) {
++    if (_cpf != value) {
++      _cpf = value;
++      markDirty('federal_document');
++    }
++  }
++
++  set email(String value) {
++    if (_email != value) {
++      _email = value;
++      markDirty('email');
++    }
++  }
++
++  set phone(String value) {
++    if (_phone != value) {
++      _phone = value;
++      markDirty('phone');
++    }
+   }
+ 
++  set password(String value) {
++    if (_password != value) {
++      _password = value;
++      markDirty('password');
++    }
++  }
++
++  set passwordConfirmation(String value) {
++    if (_passwordConfirmation != value) {
++      _passwordConfirmation = value;
++      markDirty('password_confirmation');
++    }
++  }
++
++  set rgNumber(String value) {
++    if (_rgNumber != value) {
++      _rgNumber = value;
++      markDirty('rg_number');
++    }
++  }
++
++  set rgIssuer(String value) {
++    if (_rgIssuer != value) {
++      _rgIssuer = value;
++      markDirty('rg_issuer');
++    }
++  }
++
++  set rgIssuerStateId(String value) {
++    if (_rgIssuerStateId != value) {
++      _rgIssuerStateId = value;
++      markDirty('rg_issuer_state_id');
++    }
++  }
++
++  set rgIssuerStateAbbreviation(String value) {
++    if (_rgIssuerStateAbbreviation != value) {
++      _rgIssuerStateAbbreviation = value;
++      markDirty('rg_issuer_state_abbreviation');
++    }
++  }
++
++  set rgIssueDate(DateTime value) {
++    if (_rgIssueDate != value) {
++      _rgIssueDate = value;
++      markDirty('rg_issue_date');
++    }
++  }
++
++  PersonalAccountValues({
++    String name = '',
++    String cpf = '',
++    String email = '',
++    String phone = '',
++    String password = '',
++    String passwordConfirmation = '',
++    String rgNumber = '',
++    String rgIssuer = '',
++    String rgIssuerStateId = '',
++    DateTime? rgIssueDate,
++    String rgIssuerStateAbbreviation = '',
++  }) : _name = name,
++       _cpf = cpf,
++       _email = email,
++       _phone = phone,
++       _password = password,
++       _passwordConfirmation = passwordConfirmation,
++       _rgNumber = rgNumber,
++       _rgIssuer = rgIssuer,
++       _rgIssuerStateId = rgIssuerStateId,
++       _rgIssueDate = rgIssueDate ?? DateTime.now(),
++       _rgIssuerStateAbbreviation = rgIssuerStateAbbreviation;
++
++  factory PersonalAccountValues.empty() => PersonalAccountValues();
++
+   factory PersonalAccountValues.fromMap(Map<String, dynamic> map) {
+-    return PersonalAccountValues(
++    final instance = PersonalAccountValues(
+       name: map['name'] ?? '',
+       cpf: map['federal_document'] ?? '',
+       email: map['email'] ?? '',
+@@ -86,40 +142,34 @@ class PersonalAccountValues extends BaseCheckpointValues {
+       rgNumber: map['rg_number'] ?? '',
+       rgIssuer: map['rg_issuer'] ?? '',
+       rgIssuerStateId: map['rg_issuer_state_id'] ?? '',
+-      rgIssueDate: DateTime.parse(map['rg_issue_date'] ?? ''),
++      rgIssueDate:
++          DateTime.tryParse(map['rg_issue_date'] ?? '') ?? DateTime.now(),
+       rgIssuerStateAbbreviation: map['rg_issuer_state_abbreviation'] ?? '',
+     );
++
++    final dirty = map['dirty_fields'];
++    if (dirty is List) {
++      instance.dirtyFields.addAll(dirty.map((e) => e.toString()));
++    }
++
++    return instance;
+   }
+ 
+   @override
+   Map<String, dynamic> toMap() {
+     return {
+-      'name': name,
+-      'federal_document': cpf,
+-      'email': email,
+-      'phone': phone,
+-      'password': password,
+-      'password_confirmation': passwordConfirmation,
+-      'rg_number': rgNumber,
+-      'rg_issuer': rgIssuer,
+-      'rg_issuer_state_id': rgIssuerStateId,
+-      'rg_issue_date': rgIssueDate.toIso8601String(),
+-      'rg_issuer_state_abbreviation': rgIssuerStateAbbreviation,
++      'name': _name,
++      'federal_document': _cpf,
++      'email': _email,
++      'phone': _phone,
++      'password': _password,
++      'password_confirmation': _passwordConfirmation,
++      'rg_number': _rgNumber,
++      'rg_issuer': _rgIssuer,
++      'rg_issuer_state_id': _rgIssuerStateId,
++      'rg_issue_date': _rgIssueDate.toIso8601String(),
++      'rg_issuer_state_abbreviation': _rgIssuerStateAbbreviation,
++      'dirty_fields': dirtyFields.toList(),
+     };
+   }
+-
+-  @override
+-  List<Object?> get props => [
+-    name,
+-    cpf,
+-    email,
+-    phone,
+-    password,
+-    passwordConfirmation,
+-    rgNumber,
+-    rgIssuer,
+-    rgIssuerStateId,
+-    rgIssueDate,
+-    rgIssuerStateAbbreviation,
+-  ];
+ }
+diff --git a/lib/domain/repositories/checkpoint_data_repository.dart b/lib/domain/repositories/checkpoint_data_repository.dart
+index b7bfcfe..96e5c5f 100644
+--- a/lib/domain/repositories/checkpoint_data_repository.dart
++++ b/lib/domain/repositories/checkpoint_data_repository.dart
+@@ -1,35 +1,28 @@
+-import 'package:checkpoint/domain/entities/checkpoint/checkpoint_data.dart';
+-import 'package:checkpoint/domain/enums/checkpoint_enum.dart';
+ import 'package:result_dart/result_dart.dart';
+ 
++import '/domain/entities/checkpoint/checkpoint_data.dart';
++import '/domain/entities/checkpoint/checkpoint_values/base_checkpoint_values.dart';
++
+ abstract interface class CheckpointDataRepository {
+-  /// Obtém o checkpoint atual do cache/memória
+-  CheckpointData get currentCheckpointData;
++  CheckpointData get checkpointData;
++
++  AsyncResult<CheckpointData> getCheckpointData();
+ 
+-  /// Carrega o checkpoint do secure storage
+-  AsyncResult<CheckpointData> loadCheckpointData();
++  AsyncResult<Unit> createCheckpointSection<T extends BaseCheckpointValues>(
++    T values,
++  );
+ 
+-  /// Salva o checkpoint no secure storage
+   AsyncResult<Unit> saveCheckpointData(CheckpointData checkpointData);
+ 
+-  /// Atualiza uma seção específica do checkpoint
++  AsyncResult<Unit> syncWithApi();
++
++  bool hasSectionData(CheckpointStage stage);
++
+   AsyncResult<CheckpointData> updateSection({
+     required CheckpointStage stage,
+     required CheckpointSectionData sectionData,
++    // CheckpointStage? nextStage,
+   });
+ 
+-  /// Avança para o próximo estágio
+-  AsyncResult<CheckpointData> moveToNextStage(CheckpointStage nextStage);
+-
+-  /// Marca o processo como completo
+-  AsyncResult<CheckpointData> completeCheckpoint();
+-
+-  /// Limpa todos os dados do checkpoint
+   AsyncResult<Unit> clearCheckpointData();
+-
+-  /// Sincroniza com a API (implementação futura)
+-  AsyncResult<Unit> syncWithApi();
+-
+-  /// Verifica se uma seção foi preenchida
+-  bool hasSectionData(CheckpointStage stage);
+ }
+diff --git a/lib/repository/checkpoint_data_repository.dart b/lib/repository/checkpoint_data_repository.dart
+deleted file mode 100644
+index b3a00ef..0000000
+--- a/lib/repository/checkpoint_data_repository.dart
++++ /dev/null
+@@ -1,136 +0,0 @@
+-import 'package:checkpoint/domain/entities/checkpoint/checkpoint_data.dart';
+-import 'package:checkpoint/domain/entities/checkpoint/checkpoint_section_data.dart';
+-import 'package:checkpoint/domain/enums/checkpoint_enum.dart';
+-import 'package:checkpoint/domain/repositories/checkpoint_data_repository.dart';
+-import 'package:checkpoint/core/services/secure_storage/local_secure_storage.dart';
+-import 'package:result_dart/result_dart.dart';
+-
+-class CheckpointDataRepositoryImpl implements CheckpointDataRepository {
+-  final LocalSecureStorage _secureStorage;
+-
+-  CheckpointData _currentCheckpointData = CheckpointData.empty();
+-
+-  static const String _storageKey = 'checkpoint_data';
+-
+-  CheckpointDataRepositoryImpl(this._secureStorage);
+-
+-  @override
+-  CheckpointData get currentCheckpointData => _currentCheckpointData;
+-
+-  @override
+-  AsyncResult<CheckpointData> loadCheckpointData() async {
+-    try {
+-      final result = await _secureStorage.read(_storageKey);
+-
+-      return result.fold(
+-        (source) {
+-          try {
+-            _currentCheckpointData = CheckpointData.fromJson(source);
+-            return Success(_currentCheckpointData);
+-          } catch (err) {
+-            _currentCheckpointData = CheckpointData.empty();
+-            return Failure(Exception('Erro ao carregar dados: $err'));
+-          }
+-        },
+-        (failure) {
+-          _currentCheckpointData = CheckpointData.empty();
+-          return Success(_currentCheckpointData);
+-        },
+-      );
+-    } catch (err) {
+-      return Failure(Exception('Erro inesperado ao carregar dados: $err'));
+-    }
+-  }
+-
+-  @override
+-  AsyncResult<Unit> saveCheckpointData(CheckpointData checkpointData) async {
+-    try {
+-      _currentCheckpointData = checkpointData;
+-      final jsonString = checkpointData.toJson();
+-
+-      return await _secureStorage.write(_storageKey, jsonString);
+-    } catch (err) {
+-      return Failure(Exception('Erro ao salvar dados: $err'));
+-    }
+-  }
+-
+-  @override
+-  AsyncResult<CheckpointData> updateSection({
+-    required CheckpointStage stage,
+-    required CheckpointSectionData sectionData,
+-  }) async {
+-    try {
+-      final updatedCheckpoint = _currentCheckpointData.withSection(
+-        stage: stage,
+-        sectionData: sectionData,
+-      );
+-
+-      final saveResult = await saveCheckpointData(updatedCheckpoint);
+-
+-      return saveResult.fold(
+-        (failure) => Failure(Exception('Falha ao salvar seção: $failure')),
+-        (_) => Success(updatedCheckpoint),
+-      );
+-    } catch (err) {
+-      return Failure(Exception('Erro ao atualizar seção: $err'));
+-    }
+-  }
+-
+-  @override
+-  AsyncResult<CheckpointData> moveToNextStage(CheckpointStage nextStage) async {
+-    try {
+-      final updatedCheckpoint = _currentCheckpointData.moveToStage(nextStage);
+-
+-      final saveResult = await saveCheckpointData(updatedCheckpoint);
+-
+-      return saveResult.fold(
+-        (failure) => Failure(Exception('Falha ao salvar estágio: $failure')),
+-        (_) => Success(updatedCheckpoint),
+-      );
+-    } catch (err) {
+-      return Failure(Exception('Erro ao mover para próximo estágio: $err'));
+-    }
+-  }
+-
+-  @override
+-  AsyncResult<CheckpointData> completeCheckpoint() async {
+-    try {
+-      final completedCheckpoint = _currentCheckpointData.markAsCompleted();
+-
+-      final saveResult = await saveCheckpointData(completedCheckpoint);
+-
+-      return saveResult.fold(
+-        (failure) =>
+-            Failure(Exception('Falha ao completar checkpoint: $failure')),
+-        (_) => Success(completedCheckpoint),
+-      );
+-    } catch (err) {
+-      return Failure(Exception('Erro ao completar checkpoint: $err'));
+-    }
+-  }
+-
+-  @override
+-  AsyncResult<Unit> clearCheckpointData() async {
+-    try {
+-      _currentCheckpointData = CheckpointData.empty();
+-      return await _secureStorage.delete(_storageKey);
+-    } catch (err) {
+-      return Failure(Exception('Erro ao limpar dados: $err'));
+-    }
+-  }
+-
+-  @override
+-  AsyncResult<Unit> syncWithApi() async {
+-    try {
+-      // TODO: Implementar sincronização com API quando necessário
+-      return const Success(unit);
+-    } catch (err) {
+-      return Failure(Exception('Erro na sincronização: $err'));
+-    }
+-  }
+-
+-  @override
+-  bool hasSectionData(CheckpointStage stage) {
+-    return _currentCheckpointData.hasSectionData(stage);
+-  }
+-}

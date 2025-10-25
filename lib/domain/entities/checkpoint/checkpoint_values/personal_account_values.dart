@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'base_checkpoint_values.dart';
 
 class PersonalAccountValues extends BaseCheckpointValues {
@@ -9,7 +11,7 @@ class PersonalAccountValues extends BaseCheckpointValues {
   String _passwordConfirmation = '';
   String _rgNumber = '';
   String _rgIssuer = '';
-  String _rgIssuerStateId = '';
+  String? _rgIssuerStateId;
   String _rgIssuerStateAbbreviation = '';
   DateTime _rgIssueDate = DateTime.now();
 
@@ -21,7 +23,7 @@ class PersonalAccountValues extends BaseCheckpointValues {
   String get passwordConfirmation => _passwordConfirmation;
   String get rgNumber => _rgNumber;
   String get rgIssuer => _rgIssuer;
-  String get rgIssuerStateId => _rgIssuerStateId;
+  String? get rgIssuerStateId => _rgIssuerStateId;
   String get rgIssuerStateAbbreviation => _rgIssuerStateAbbreviation;
   DateTime get rgIssueDate => _rgIssueDate;
 
@@ -84,7 +86,7 @@ class PersonalAccountValues extends BaseCheckpointValues {
     }
   }
 
-  set rgIssuerStateId(String value) {
+  set rgIssuerStateId(String? value) {
     if (_rgIssuerStateId != value) {
       _rgIssuerStateId = value;
       markDirty('rg_issuer_state_id');
@@ -172,4 +174,10 @@ class PersonalAccountValues extends BaseCheckpointValues {
       'dirty_fields': dirtyFields.toList(),
     };
   }
+
+  @override
+  String toJson() => jsonEncode(toMap());
+
+  factory PersonalAccountValues.fromJson(String source) =>
+      PersonalAccountValues.fromMap(jsonDecode(source));
 }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'base_checkpoint_values.dart';
 
 /// Dados de um sócio empresarial individual.
@@ -173,6 +175,12 @@ class BusinessPartnerData extends BaseCheckpointValues {
       'dirty_fields': dirtyFields.toList(),
     };
   }
+
+  @override
+  String toJson() => jsonEncode(toMap());
+
+  factory BusinessPartnerData.fromJson(String source) =>
+      BusinessPartnerData.fromMap(jsonDecode(source));
 }
 
 /// Coleção que gerencia múltiplos sócios empresariais.
@@ -283,4 +291,10 @@ class BusinessPartnersValues extends BaseCheckpointValues {
 
     return result;
   }
+
+  @override
+  String toJson() => jsonEncode(toMap());
+
+  factory BusinessPartnersValues.fromJson(String source) =>
+      BusinessPartnersValues.fromMap(jsonDecode(source));
 }
