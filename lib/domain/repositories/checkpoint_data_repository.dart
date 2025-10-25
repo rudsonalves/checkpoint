@@ -12,17 +12,11 @@ abstract interface class CheckpointDataRepository {
     T values,
   );
 
-  AsyncResult<Unit> saveCheckpointData(CheckpointData checkpointData);
+  AsyncResult<Unit> saveCheckpointData();
 
   AsyncResult<Unit> syncWithApi();
 
   bool hasSectionData(CheckpointStage stage);
 
-  AsyncResult<CheckpointData> updateSection({
-    required CheckpointStage stage,
-    required CheckpointSectionData sectionData,
-    // CheckpointStage? nextStage,
-  });
-
-  AsyncResult<Unit> clearCheckpointData();
+  AsyncResult<Unit> clearCheckpointData({String? cpf});
 }

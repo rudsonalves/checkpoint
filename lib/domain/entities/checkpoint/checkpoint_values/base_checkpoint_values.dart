@@ -33,6 +33,8 @@ abstract class BaseCheckpointValues {
     final full = toMap();
     return {for (final key in dirtyFields) key: full[key]};
   }
+
+  String toJson();
 }
 
 extension BaseCheckpointValuesStage on BaseCheckpointValues {

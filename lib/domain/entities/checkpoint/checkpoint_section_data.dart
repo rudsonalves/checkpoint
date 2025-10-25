@@ -1,30 +1,10 @@
-import 'package:equatable/equatable.dart';
+import 'dart:convert';
 
 import 'checkpoint_values/base_checkpoint_values.dart';
 
-/// Classe base abstrata que representa os dados de uma seção do checkpoint.
-///
-/// Esta classe define a interface comum para todas as seções do checkpoint,
-/// permitindo diferentes tipos de dados serem tratados de forma uniforme.
-/// O tipo específico de seção é determinado pelo CheckpointStage correspondente.
-abstract class CheckpointSectionData extends Equatable {
+abstract class CheckpointSectionData {
   const CheckpointSectionData();
 
-  /// Factory constructor que cria uma instância de [CheckpointSectionData]
-  /// baseada no estágio do checkpoint e nos dados fornecidos.
-  ///
-  /// [stage] - O estágio atual do checkpoint que determina o tipo de dados
-  /// [data] - Mapa contendo os dados específicos da seção
-  ///
-  /// Retorna a implementação apropriada de [CheckpointSectionData] baseada no
-  /// estágio:
-  /// - [CheckpointStage.createPersonalAccount]: Retorna seção com dados
-  ///   pessoais
-  /// - [CheckpointStage.createBusinessAccount]: Retorna seção com dados
-  ///   empresariais
-  /// - [CheckpointStage.registerBusinessPartners]: Retorna seção com dados de
-  ///   sócios
-  /// - Outros estágios: Retorna uma seção vazia
   factory CheckpointSectionData.fromMap({
     required CheckpointStage stage,
     required Map<String, dynamic> data,
@@ -51,7 +31,32 @@ abstract class CheckpointSectionData extends Equatable {
     }
   }
 
+  factory CheckpointSectionData.fromJson({
+    required CheckpointStage stage,
+    required String json,
+  }) {
+    switch (stage) {
+      case CheckpointStage.createPersonalAccount:
+        return CheckpointSection(
+          values: PersonalAccountValues.fromJson(json),
+        );
+      case CheckpointStage.createBusinessAccount:
+        return CheckpointSection(
+          values: BusinessAccountValues.fromJson(json),
+        );
+      case CheckpointStage.registerBusinessPartners:
+        return CheckpointSection(
+          values: BusinessPartnersValues.fromJson(json),
+        );
+      case CheckpointStage.noExistAccount:
+      case CheckpointStage.unknown:
+        return const EmptySection();
+    }
+  }
+
   Map<String, dynamic> toMap();
+
+  String toJson();
 }
 
 class EmptySection extends CheckpointSectionData {
@@ -61,17 +66,11 @@ class EmptySection extends CheckpointSectionData {
   Map<String, dynamic> toMap() => {};
 
   @override
-  List<Object?> get props => [];
+  String toJson() => '{}';
 }
 
-/// Implementação genérica de [CheckpointSectionData] que contém valores
-/// específicos.
-///
-/// Esta classe encapsula dados específicos de uma seção do checkpoint,
-/// onde [T] deve ser uma subclasse de [BaseCheckpointValues].
 class CheckpointSection<T extends BaseCheckpointValues>
     extends CheckpointSectionData {
-  /// Os valores específicos desta seção do checkpoint.
   final T values;
 
   const CheckpointSection({required this.values});
@@ -80,5 +79,5 @@ class CheckpointSection<T extends BaseCheckpointValues>
   Map<String, dynamic> toMap() => values.toMap();
 
   @override
-  List<Object?> get props => [values];
+  String toJson() => jsonEncode(toMap());
 }

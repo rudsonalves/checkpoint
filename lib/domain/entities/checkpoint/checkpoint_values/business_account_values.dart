@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'base_checkpoint_values.dart';
 
 class BusinessAccountValues extends BaseCheckpointValues {
@@ -250,4 +252,10 @@ class BusinessAccountValues extends BaseCheckpointValues {
       'dirty_fields': dirtyFields.toList(),
     };
   }
+
+  @override
+  String toJson() => jsonEncode(toMap());
+
+  factory BusinessAccountValues.fromJson(String source) =>
+      BusinessAccountValues.fromMap(jsonDecode(source));
 }

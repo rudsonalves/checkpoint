@@ -1,12 +1,7 @@
 import 'dart:convert';
 
-import '/domain/enums/checkpoint_enum.dart';
-import 'package:equatable/equatable.dart';
-
 import 'checkpoint_section_data.dart';
-import 'checkpoint_values/business_account_values.dart';
-import 'checkpoint_values/business_partners_values.dart';
-import 'checkpoint_values/personal_account_values.dart';
+import 'checkpoint_values/base_checkpoint_values.dart';
 
 export '/domain/enums/checkpoint_enum.dart';
 export 'checkpoint_section_data.dart';
@@ -21,7 +16,7 @@ export 'checkpoint_values/personal_account_values.dart';
 /// - O estágio atual do processo
 /// - Status de completude
 /// - Dados de todas as seções já preenchidas
-class CheckpointData extends Equatable {
+class CheckpointData {
   final CheckpointStage currentStage;
   final bool isCompleted;
   final Map<CheckpointStage, CheckpointSectionData> sections;
@@ -37,7 +32,34 @@ class CheckpointData extends Equatable {
     isCompleted: false,
   );
 
+  factory CheckpointData.newPerson() => CheckpointData(
+    currentStage: CheckpointStage.createPersonalAccount,
+    isCompleted: false,
+    sections: <CheckpointStage, CheckpointSectionData>{
+      CheckpointStage.createPersonalAccount:
+          CheckpointSection<PersonalAccountValues>(
+            values: PersonalAccountValues(),
+          ),
+    },
+  );
+
   Map<String, dynamic> toMap() {
+    final sectionsData = <String, Map<String, dynamic>>{};
+
+    // for (final entry in sections.entries) {
+    //   sectionsData[entry.key.stageName] = {
+    //     'data': entry.value.toMap(),
+    //   };
+    // }
+
+    return {
+      'current_stage': currentStage.stageName,
+      'is_completed': isCompleted,
+      'sections': sectionsData,
+    };
+  }
+
+  Map<String, dynamic> toFullMap() {
     final sectionsData = <String, Map<String, dynamic>>{};
 
     for (final entry in sections.entries) {
@@ -53,20 +75,22 @@ class CheckpointData extends Equatable {
     };
   }
 
+  String toFullJson() => json.encode(toFullMap());
+
   factory CheckpointData.fromMap(Map<String, dynamic> map) {
     final sectionsMap = <CheckpointStage, CheckpointSectionData>{};
-    final sectionsData = map['sections'] as Map<String, dynamic>? ?? {};
+    // final sectionsData = map['sections'] as Map<String, dynamic>? ?? {};
 
-    for (final entry in sectionsData.entries) {
-      final stage = CheckpointStage.fromString(entry.key);
-      final sectionData = entry.value as Map<String, dynamic>;
-      final data = sectionData['data'] as Map<String, dynamic>? ?? {};
+    // for (final entry in sectionsData.entries) {
+    //   final stage = CheckpointStage.fromString(entry.key);
+    //   final sectionData = entry.value as Map<String, dynamic>;
+    //   final data = sectionData['data'] as Map<String, dynamic>? ?? {};
 
-      sectionsMap[stage] = CheckpointSectionData.fromMap(
-        stage: stage,
-        data: data,
-      );
-    }
+    //   sectionsMap[stage] = CheckpointSectionData.fromMap(
+    //     stage: stage,
+    //     data: data,
+    //   );
+    // }
 
     return CheckpointData(
       currentStage: CheckpointStage.fromString(map['current_stage'] ?? ''),
@@ -82,51 +106,49 @@ class CheckpointData extends Equatable {
     return CheckpointData.fromMap(json.decode(source));
   }
 
-  /// Adiciona ou atualiza uma seção do checkpoint com novos dados.
-  ///
-  /// [stage] - O estágio da seção a ser atualizada
-  /// [sectionData] - Os novos dados da seção
-  /// [nextStage] - Opcional: especifica o próximo estágio, se não fornecido usa
-  /// o padrão
-  ///
-  /// Retorna uma nova instância de [CheckpointData] com a seção atualizada
-  /// e possivelmente um novo estágio atual.
-  // CheckpointData withSection({
-  //   required CheckpointStage stage,
-  //   required CheckpointSectionData sectionData,
-  //   // CheckpointStage? nextStage,
-  // }) {
-  //   final updatedSections = Map<CheckpointStage, CheckpointSectionData>.from(
-  //     sections,
-  //   );
-  //   updatedSections[stage] = sectionData;
+  /// Retorna um mapa apenas com os campos alterados de cada seção.
+  /// Utiliza o método toDirtyMap das instâncias de BaseCheckpointValues.
+  Map<String, dynamic> toDirtyMap() {
+    final dirtySections = <String, Map<String, dynamic>>{};
 
-  //   return copyWith(
-  //     sections: updatedSections,
-  //     currentStage: stage, // nextStage ?? _getNextStage(stage),
-  //   );
-  // }
+    for (final entry in sections.entries) {
+      final section = entry.value;
+      // Só processa se for CheckpointSection e os valores forem
+      // BaseCheckpointValues
+      if (section is CheckpointSection) {
+        final values = section.values;
+        if (values.isDirty) {
+          dirtySections[entry.key.stageName] = {
+            'data': values.toDirtyMap(),
+          };
+        }
+      }
+    }
 
-  /// Determina o próximo estágio baseado no estágio atual.
-  ///
-  /// Define a sequência lógica do fluxo de checkpoint:
-  /// 1. noExistAccount → createPersonalAccount
-  /// 2. createPersonalAccount → createBusinessAccount
-  /// 3. createBusinessAccount → registerBusinessPartners
-  /// 4. registerBusinessPartners → registerBusinessPartners (permite múltiplos
-  /// sócios)
-  // CheckpointStage _getNextStage(CheckpointStage currentStage) =>
-  //     switch (currentStage) {
-  //       CheckpointStage.noExistAccount => CheckpointStage.createPersonalAccount,
-  //       CheckpointStage.createPersonalAccount =>
-  //         CheckpointStage.createBusinessAccount,
-  //       CheckpointStage.createBusinessAccount =>
-  //         CheckpointStage.registerBusinessPartners,
-  //       CheckpointStage.registerBusinessPartners =>
-  //         // Pode ter múltiplos sócios
-  //         CheckpointStage.registerBusinessPartners,
-  //       CheckpointStage.unknown => CheckpointStage.noExistAccount,
-  //     };
+    return {
+      'current_stage': currentStage.stageName,
+      'is_completed': isCompleted,
+      'sections': dirtySections,
+    };
+  }
+
+  void markAllClean() {
+    for (final section in sections.values) {
+      if (section is CheckpointSection) {
+        final values = section.values;
+        values.markClean();
+      }
+    }
+  }
+
+  bool get hasAnyDirtyFields {
+    for (final section in sections.values) {
+      if (section is CheckpointSection) {
+        if (section.values.isDirty) return true;
+      }
+    }
+    return false;
+  }
 
   /// Verifica se existe dados para um estágio específico.
   ///
@@ -161,9 +183,6 @@ class CheckpointData extends Equatable {
     isCompleted: isCompleted ?? this.isCompleted,
     sections: sections ?? this.sections,
   );
-
-  @override
-  List<Object?> get props => [currentStage, isCompleted, sections];
 }
 
 /// Extension que adiciona getters convenientes para acessar dados específicos
